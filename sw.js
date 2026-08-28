@@ -1,9 +1,9 @@
 // Offline shell for Neon Lines. Registered with a relative path so the scope
 // stays on the /lines/ prefix the site serves the game under.
-// Cache lookups ignore the ?v= query so precached entries still match, which
-// means a version bump alone will not evict anything: raise this name too
-// whenever the shipped assets change.
-const CACHE = 'neon-lines-v2';
+// Raise this name when an asset is dropped from the shell: refreshed files
+// replace themselves, but entries for files that no longer ship only go away
+// when the old cache is discarded on activate.
+const CACHE = 'neon-lines-v3';
 // Both games are served from this one origin and therefore share a single
 // CacheStorage. The cleanup on activate must only ever touch this game's own
 // caches: deleting everything else wipes the other game's offline copy.
@@ -24,8 +24,18 @@ const SHELL = [
   '/player-name.js',
 ];
 
+// Assets are versioned by a ?v= query, so the cache is keyed by path alone.
+// Keeping one entry per asset means a background refresh REPLACES it; keying by
+// the full URL instead left the fresh copy beside the precached one, and an
+// ignoreSearch lookup could go on preferring the stale entry indefinitely.
+const cacheKey = request => {
+  const url = new URL(request.url);
+  url.search = '';
+  return url.href;
+};
+
 const store = (request, response) => caches.open(CACHE)
-  .then(cache => cache.put(request, response))
+  .then(cache => cache.put(cacheKey(request), response))
   // Range requests answer 206, which the Cache API refuses to store.
   .catch(() => undefined);
 
@@ -57,13 +67,12 @@ self.addEventListener('fetch', event => {
         if (response.status === 200) void store(request, response.clone());
         return response;
       })
-      .catch(() => caches.match(request, { ignoreSearch: true })
-        .then(hit => hit || caches.match('./', { ignoreSearch: true }))));
+      .catch(() => caches.match(cacheKey(request))
+        .then(hit => hit || caches.match('./'))));
     return;
   }
 
-  // Assets here are versioned by a ?v= query, which must not become a miss.
-  event.respondWith(caches.match(request, { ignoreSearch: true }).then(hit => {
+  event.respondWith(caches.match(cacheKey(request)).then(hit => {
     const network = fetch(request).then(response => {
       if (response.status === 200) void store(request, response.clone());
       return response;
