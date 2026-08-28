@@ -1,0 +1,11 @@
+.game { height: 100vh; min-height: 100%; }
+
+@supports (height: 100dvh) {
+  .game { height: 100dvh; }
+}
+
+@supports not (color: color-mix(in srgb, #fff, #000)) {
+  .ball {
+    background: radial-gradient(circle at 29% 21%, #fff9 0 7%, transparent 8%), var(--ball);
+  }
+}
