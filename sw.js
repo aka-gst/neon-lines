@@ -1,0 +1,69 @@
+// Offline shell for Neon Lines. Registered with a relative path so the scope
+// stays on the /lines/ prefix the site serves the game under.
+// Cache lookups ignore the ?v= query so precached entries still match, which
+// means a version bump alone will not evict anything: raise this name too
+// whenever the shipped assets change.
+const CACHE = 'neon-lines-v1';
+
+const SHELL = [
+  './',
+  './index.html',
+  './styles.css',
+  './android.css',
+  './game.js',
+  './favicon.svg',
+  './manifest.webmanifest',
+  './icon-192.png',
+  './icon-512.png',
+  // Shared across every game on the site, so they live outside this scope.
+  '/game-menu.css',
+  '/player-name.js',
+];
+
+const store = (request, response) => caches.open(CACHE)
+  .then(cache => cache.put(request, response))
+  // Range requests answer 206, which the Cache API refuses to store.
+  .catch(() => undefined);
+
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open(CACHE)
+    // One entry at a time: addAll is atomic, so a single miss would leave the
+    // whole install with nothing cached.
+    .then(cache => Promise.all(SHELL.map(url => cache.add(url).catch(() => undefined))))
+    .then(() => self.skipWaiting()));
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(caches.keys()
+    .then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))
+    .then(() => self.clients.claim()));
+});
+
+self.addEventListener('fetch', event => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  // Scores are worthless when stale, and analytics must never be replayed.
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/pulse/')) return;
+
+  if (request.mode === 'navigate') {
+    event.respondWith(fetch(request)
+      .then(response => {
+        if (response.status === 200) void store(request, response.clone());
+        return response;
+      })
+      .catch(() => caches.match(request, { ignoreSearch: true })
+        .then(hit => hit || caches.match('./', { ignoreSearch: true }))));
+    return;
+  }
+
+  // Assets here are versioned by a ?v= query, which must not become a miss.
+  event.respondWith(caches.match(request, { ignoreSearch: true }).then(hit => {
+    const network = fetch(request).then(response => {
+      if (response.status === 200) void store(request, response.clone());
+      return response;
+    }).catch(() => hit);
+    return hit || network;
+  }));
+});
