@@ -3,7 +3,11 @@
 // Cache lookups ignore the ?v= query so precached entries still match, which
 // means a version bump alone will not evict anything: raise this name too
 // whenever the shipped assets change.
-const CACHE = 'neon-lines-v1';
+const CACHE = 'neon-lines-v2';
+// Both games are served from this one origin and therefore share a single
+// CacheStorage. The cleanup on activate must only ever touch this game's own
+// caches: deleting everything else wipes the other game's offline copy.
+const PREFIX = 'neon-lines-';
 
 const SHELL = [
   './',
@@ -35,7 +39,7 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => {
   event.waitUntil(caches.keys()
-    .then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))
+    .then(keys => Promise.all(keys.filter(key => key.startsWith(PREFIX) && key !== CACHE).map(key => caches.delete(key))))
     .then(() => self.clients.claim()));
 });
 
