@@ -5,5 +5,3 @@
 @keyframes quake{0%{transform:translate3d(0,0,0)}15%{transform:translate3d(calc(var(--quake,1)*-3px),calc(var(--quake,1)*2px),0) rotate(calc(var(--quake,1)*-.2deg))}33%{transform:translate3d(calc(var(--quake,1)*3px),calc(var(--quake,1)*-2px),0) rotate(calc(var(--quake,1)*.24deg))}52%{transform:translate3d(calc(var(--quake,1)*-2px),calc(var(--quake,1)*1px),0) rotate(calc(var(--quake,1)*-.13deg))}74%{transform:translate3d(calc(var(--quake,1)*1px),calc(var(--quake,1)*-1px),0)}100%{transform:translate3d(0,0,0)}}
 @keyframes board-flash{0%{opacity:0}14%{opacity:calc(var(--quake,1)*.17)}100%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.board.quake{animation:none}.board.quake::after{display:none}}
-.records .rec-head{display:block;margin:7px 0 2px;color:#bcaec2;font-size:8px;font-style:normal;letter-spacing:.1em}
-.records .rec-head:first-child{margin-top:0}
