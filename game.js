@@ -50,6 +50,7 @@ function updateSoundButton(){soundToggle.textContent=`ЗВУК: ${muted?'ВЫК�
 soundToggle.onclick=()=>{muted=!muted;localStorage.setItem('neon-lines-muted',muted?'1':'0');updateSoundButton();if(!muted)tone(520,70,'square',.025)};
 updateSoundButton();
 try{best=Number(localStorage.getItem('neon-lines-best')||0);records=JSON.parse(localStorage.getItem('neon-lines-records')||'[]')}catch{best=0;records=[]}
+document.documentElement.style.setProperty('--burst',`url(${new URL('burst.png',document.baseURI).href})`);
 board=freshBoard();nextColors=[randomColor(),randomColor(),randomColor()];score=0;render();
 void loadLeaderboard();
 if('serviceWorker' in navigator)void navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(()=>{});

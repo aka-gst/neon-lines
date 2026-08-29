@@ -5,3 +5,6 @@
 @keyframes quake{0%{transform:translate3d(0,0,0)}15%{transform:translate3d(calc(var(--quake,1)*-3px),calc(var(--quake,1)*2px),0) rotate(calc(var(--quake,1)*-.2deg))}33%{transform:translate3d(calc(var(--quake,1)*3px),calc(var(--quake,1)*-2px),0) rotate(calc(var(--quake,1)*.24deg))}52%{transform:translate3d(calc(var(--quake,1)*-2px),calc(var(--quake,1)*1px),0) rotate(calc(var(--quake,1)*-.13deg))}74%{transform:translate3d(calc(var(--quake,1)*1px),calc(var(--quake,1)*-1px),0)}100%{transform:translate3d(0,0,0)}}
 @keyframes board-flash{0%{opacity:0}14%{opacity:calc(var(--quake,1)*.17)}100%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.board.quake{animation:none}.board.quake::after{display:none}}
+.cell.clearing::after{content:'';position:absolute;z-index:4;inset:-75%;pointer-events:none;background:var(--burst) center/contain no-repeat;animation:burst-pop .46s cubic-bezier(.2,.8,.3,1) forwards}
+@keyframes burst-pop{0%{opacity:0;transform:scale(.3) rotate(-14deg)}22%{opacity:1;transform:scale(1.02) rotate(0)}100%{opacity:0;transform:scale(1.8) rotate(16deg)}}
+@media(prefers-reduced-motion:reduce){.cell.clearing::after{display:none}}
