@@ -54,3 +54,25 @@ body[data-ball-style='facet'] .ball{border-radius:28%;clip-path:polygon(29% 0,71
 .curtain-full{top:0;height:100%;object-position:50% 50%}
 .curtain-veil{position:absolute;z-index:0;inset:0;pointer-events:none;background:radial-gradient(58% 40% at 50% 50%,#03000ae6 0 34%,#03000ab3 66%,transparent 88%),linear-gradient(180deg,#03000a66,transparent 26%,transparent 74%,#03000a66)}
 @media(prefers-reduced-motion:reduce){.overlay{animation:none}}
+
+/* Волшебный шар: подходит к любому цвету, поэтому носит их все сразу. Форму и
+   скругление задаёт заново — иначе огранка обрезала бы его своим clip-path, а
+   трубка оставила бы полым. Мигает за два хода до исчезновения: пропасть без
+   предупреждения читалось бы как сбой, а не как правило. */
+body[data-ball-style] .ball.wild{
+  position:relative;border:0;border-radius:50%;clip-path:none;
+  background:conic-gradient(from 0deg,#ef4356,#ffd13a,#42d574,#42aef5,#bd67e8,#ff70ad,#ff9138,#ef4356);
+  box-shadow:0 0 10px #ffffffaa,0 0 20px #bd67e8cc;
+  animation:wild-spin 3.6s linear infinite;
+}
+body[data-ball-style] .ball.wild::after{
+  content:'';position:absolute;inset:30%;border-radius:50%;
+  background:radial-gradient(circle at 38% 33%,#fff,#ffffffd9 45%,#ffffff40 72%,transparent);
+}
+body[data-ball-style] .ball.wild.fading{animation:wild-spin 3.6s linear infinite,wild-blink .9s ease-in-out infinite}
+@keyframes wild-spin{to{transform:rotate(360deg)}}
+@keyframes wild-blink{50%{opacity:.3;box-shadow:0 0 4px #ffffff66}}
+@media(prefers-reduced-motion:reduce){
+  body[data-ball-style] .ball.wild,body[data-ball-style] .ball.wild.fading{animation:none}
+  body[data-ball-style] .ball.wild.fading{opacity:.55}
+}
