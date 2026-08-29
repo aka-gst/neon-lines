@@ -5,6 +5,15 @@ const COLORS=['#ef4356','#ffd13a','#42d574','#42aef5','#bd67e8','#ff70ad','#ff91
 // The look of a ball is CSS now, one of five rolled per game, so the only
 // thing the markup carries is its colour.
 const ballTag=index=>`<i class="ball" style="--ball:${COLORS[index]}"></i>`;
+// Пошаговое обучение поверх настоящего интерфейса — общий файл с остальными
+// играми. Появляется один раз на устройство и по кнопке «как играть». Игра
+// пошаговая, торопить некому, поэтому замораживать ничего не нужно.
+const TOUR_STEPS=[
+  {sel:'#board',text:'Поле 9×9. Нажми на шар, потом на свободную клетку — он поедет туда, если есть дорога.'},
+  {sel:'#next',text:'Три следующих шара. Они лягут на поле после твоего хода.'},
+  {sel:'.sidebar-top .meter',text:'Пять одинаковых в ряд — по горизонтали, вертикали или диагонали — сгорают и дают очки.'}
+];
+function startTour(force){if(!window.Tour)return;if(force)window.Tour.start(TOUR_STEPS);else window.Tour.once('neon-lines',TOUR_STEPS)}
 const BALL_STYLES=['glass','tube','crt','candy','facet'];
 function rollBalls(){const previous=document.body.dataset.ballStyle;const pool=BALL_STYLES.filter(style=>style!==previous);document.body.dataset.ballStyle=pool[Math.floor(Math.random()*pool.length)]}
 const boardEl=document.querySelector('#board'),messageEl=document.querySelector('#message'),scoreEl=document.querySelector('#score'),bestEl=document.querySelector('#best'),nextEl=document.querySelector('#next'),recordsEl=document.querySelector('#records');
@@ -59,11 +68,12 @@ async function removeMatches(found){if(!found.size)return false;sound.clear();pi
 async function spawnBalls(){const free=freeCells(),created=[];for(const color of nextColors){if(!free.length)break;const index=Math.floor(Math.random()*free.length),[x,y]=free.splice(index,1)[0];board[y][x]=color;created.push(id(x,y))}nextColors=[randomColor(),randomColor(),randomColor()];born=new Set(created);sound.spawn();render();await wait(540);born=new Set();render();await removeMatches(matches())}
 async function handleCell(x,y){if(!started||gameOver)return;if(board[y][x]!==null){const target=boardEl.children[y*SIZE+x];if(target?.classList.contains('ghost'))return;sound.select();selected=[x,y];messageEl.textContent=clearing.has(id(x,y))?'Этот шар сейчас сгорает.':'Шарик выбран.';if(locked){boardEl.querySelectorAll('.cell.selected').forEach(cell=>cell.classList.remove('selected'));target?.classList.add('selected')}else render();return}if(locked)return;if(!selected){messageEl.textContent='Сначала выбери шарик.';return}const path=findPath(selected,[x,y]);if(!path){messageEl.textContent='Туда нет свободного пути.';return}locked=true;const from=selected,color=board[from[1]][from[0]];selected=null;messageEl.textContent='Шарик прыгает по найденному пути…';await animatePath(from,path,color);board[from[1]][from[0]]=null;board[y][x]=color;render();if(!await removeMatches(matches())){await spawnBalls();messageEl.textContent='Появились три новых шарика.'}turns+=1;if(turns>=nextWisdomAt){messageEl.textContent=WISDOM[Math.floor(Math.random()*WISDOM.length)];nextWisdomAt=turns+8+Math.floor(Math.random()*6)}if(freeCells().length===0){gameOver=true;finishScore()}locked=false;render()}
 function finishScore(){sound.over();quake(3);window.umami?.track('game-finish',{game:'neon-lines',score,duration_seconds:Math.round((Date.now()-startedAt)/1000)});void submitLeaderboard();records=[...records,score].sort((a,b)=>b-a).slice(0,5);best=Math.max(best,score);localStorage.setItem('neon-lines-records',JSON.stringify(records));localStorage.setItem('neon-lines-best',String(best))}
-function restart(){sound.start();rollBalls();startedAt=Date.now();void beginLeaderboard();window.umami?.track('game-start',{game:'neon-lines'});board=freshBoard();selected=null;nextColors=[randomColor(),randomColor(),randomColor()];score=0;turns=0;nextWisdomAt=8+Math.floor(Math.random()*5);started=true;gameOver=false;locked=false;born=new Set();board.forEach((row,y)=>row.forEach((value,x)=>{if(value!==null)born.add(id(x,y))}));messageEl.textContent='Собери пять одинаковых шаров.';render();setTimeout(()=>{born=new Set();render()},520)}
+function restart(){sound.start();rollBalls();startedAt=Date.now();void beginLeaderboard();window.umami?.track('game-start',{game:'neon-lines'});board=freshBoard();selected=null;nextColors=[randomColor(),randomColor(),randomColor()];score=0;turns=0;nextWisdomAt=8+Math.floor(Math.random()*5);started=true;gameOver=false;locked=false;born=new Set();board.forEach((row,y)=>row.forEach((value,x)=>{if(value!==null)born.add(id(x,y))}));messageEl.textContent='Собери пять одинаковых шаров.';render();setTimeout(()=>{born=new Set();render()},520);setTimeout(()=>startTour(false),900)}
 document.querySelector('#restart').onclick=()=>{if(started&&!gameOver&&!confirm('Начать новую игру? Текущий результат будет потерян.'))return;restart()};
 const soundToggle=document.querySelector('#sound-toggle');
 function updateSoundButton(){soundToggle.textContent=`ЗВУК: ${muted?'ВЫКЛ':'ВКЛ'}`}
-soundToggle.onclick=()=>{muted=!muted;localStorage.setItem('neon-lines-muted',muted?'1':'0');updateSoundButton();if(!muted)tone(520,70,'square',.025)};
+soundToggle.onclick=()=>{muted=!muted;localStorage.setItem('neon-lines-muted',muted?'1':'0');updateSoundButton();
+document.getElementById('how').onclick=()=>startTour(true);if(!muted)tone(520,70,'square',.025)};
 updateSoundButton();
 try{best=Number(localStorage.getItem('neon-lines-best')||0);records=JSON.parse(localStorage.getItem('neon-lines-records')||'[]')}catch{best=0;records=[]}
 pickBurst();rollBalls();

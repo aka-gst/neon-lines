@@ -21,6 +21,7 @@ body{background:repeating-linear-gradient(0deg,#87ffd514 0 1px,transparent 1px 4
    different button colours across two games read as two different games. */
 .action{border-color:#f4c542;background:#26210e;color:#ffe78d;box-shadow:3px 3px 0 #000}
 #sound-toggle{border-color:#00d9ff;background:#07191d;color:#83f1ff}
+#how{grid-column:1/-1;border-color:#313442;background:#0b0c12;color:#9aa0ae}
 .overlay button{border-color:#7dff00;background:#101606;color:#efff00;box-shadow:0 0 14px #7dff0055,3px 3px #000}
 .overlay{position:fixed;inset:0;z-index:80;justify-items:center;gap:20px;padding:clamp(24px,6vw,72px);border:0;background:radial-gradient(circle at 50% 18%,#181025,#05050a 55%,#010104);animation:curtain .48s cubic-bezier(.1,.8,.2,1)}
 .overlay button{min-width:min(88vw,620px);min-height:clamp(88px,21vh,132px);font-size:clamp(30px,8vw,52px)}
