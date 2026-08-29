@@ -3,7 +3,7 @@
 // Raise this name when an asset is dropped from the shell: refreshed files
 // replace themselves, but entries for files that no longer ship only go away
 // when the old cache is discarded on activate.
-const CACHE = 'neon-lines-v7';
+const CACHE = 'neon-lines-v9';
 // Both games are served from this one origin and therefore share a single
 // CacheStorage. The cleanup on activate must only ever touch this game's own
 // caches: deleting everything else wipes the other game's offline copy.
@@ -23,14 +23,8 @@ const SHELL = [
   '/player-name.js',
   './og.jpg',
   './icon-maskable-512.png',
-  './balls/ball-red.png',
-  './balls/ball-yellow.png',
-  './balls/ball-green.png',
-  './balls/ball-blue.png',
-  './balls/ball-violet.png',
-  './balls/ball-pink.png',
-  './balls/ball-orange.png',
   './burst.png',
+  './lines-start-bg.webp',
   './burst-g.webp',
   './burst-h.webp',
   './burst-i.webp'
