@@ -76,3 +76,7 @@ body[data-ball-style] .ball.wild.fading{animation:wild-spin 3.6s linear infinite
   body[data-ball-style] .ball.wild,body[data-ball-style] .ball.wild.fading{animation:none}
   body[data-ball-style] .ball.wild.fading{opacity:.55}
 }
+
+/* Номер этапа под счётом: подниматься молча он не должен, иначе игрок
+   заметит только, что стало теснее, и решит, что ему не везёт. */
+.meter em{display:block;margin-top:4px;color:#767c8b;font-size:8px;font-style:normal;letter-spacing:.1em}
