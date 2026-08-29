@@ -16,7 +16,12 @@ body{background:repeating-linear-gradient(0deg,#87ffd514 0 1px,transparent 1px 4
 .cell{border:1px solid #14101c;background:#0a0710;box-shadow:none}.cell:hover{background:#160f22}.cell.selected{outline-color:#00d9ff;filter:drop-shadow(0 0 7px #00d9ff)}
 .meter,.preview,.records{border-color:#313442;background:linear-gradient(#101119,#050508)}
 .meter strong,.records b{color:#efff00}
-.action,.overlay button{border-color:#7dff00;background:#101606;color:#efff00;box-shadow:0 0 14px #7dff0055,3px 3px #000}
+/* The same three buttons Tetcolor uses: gold for the action, cyan for the
+   toggle beside it, acid green only for the one on the curtain. Three
+   different button colours across two games read as two different games. */
+.action{border-color:#f4c542;background:#26210e;color:#ffe78d;box-shadow:3px 3px 0 #000}
+#sound-toggle{border-color:#00d9ff;background:#07191d;color:#83f1ff}
+.overlay button{border-color:#7dff00;background:#101606;color:#efff00;box-shadow:0 0 14px #7dff0055,3px 3px #000}
 .overlay{position:fixed;inset:0;z-index:80;justify-items:center;gap:20px;padding:clamp(24px,6vw,72px);border:0;background:radial-gradient(circle at 50% 18%,#181025,#05050a 55%,#010104);animation:curtain .48s cubic-bezier(.1,.8,.2,1)}
 .overlay button{min-width:min(88vw,620px);min-height:clamp(88px,21vh,132px);font-size:clamp(30px,8vw,52px)}
 .game-home-menu{opacity:.58!important;border-color:#313442!important;color:#d5cadb!important;font-size:8px!important}
