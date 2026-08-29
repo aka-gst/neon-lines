@@ -1,13 +1,7 @@
-/* Поле выбирается на стартовом экране. Семь на семь — быстрая партия, одиннадцать
-   на одиннадцать — долгая. В общую таблицу уходит только девять на девять:
-   на большем поле места для манёвра больше, партия длиннее и счёт несравним,
-   так что смешивать их в одном списке значило бы обесценить уже стоящие там
-   рекорды. */
-const SIZES=[7,9,11];
-const SIZE_KEY='neon-lines-size';
-const RANKED=9;
-let SIZE=9;
-const startBalls=()=>SIZE===7?4:SIZE===11?7:5;
+/* Поле девять на девять и только: размеры пробовались, но в общую таблицу
+   всё равно шёл один из них, а остальные оставались игрой в стороне. */
+const SIZE=9;
+const startBalls=()=>5;
 const COLORS=['#ef4356','#ffd13a','#42d574','#42aef5','#bd67e8','#ff70ad','#ff9138'];
 // Same order as COLORS. Written into the element's own style attribute so the
 // path resolves against the page and keeps working under the /lines/ prefix.
@@ -90,7 +84,7 @@ const MOSCOW_OFFSET_MS=3*60*60*1000;
 // The leaderboard server cuts its "today" period at Moscow midnight, so the
 // local daily best rolls over together with the ranking.
 const moscowDay=()=>new Date(Date.now()+MOSCOW_OFFSET_MS).toISOString().slice(0,10);
-async function beginLeaderboard(){if(SIZE!==RANKED){leaderboardToken='';return}try{const response=await fetch('/api/leaderboard/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({game:'neon-lines'})});leaderboardToken=(await response.json()).token||''}catch{leaderboardToken=''}}
+async function beginLeaderboard(){try{const response=await fetch('/api/leaderboard/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({game:'neon-lines'})});leaderboardToken=(await response.json()).token||''}catch{leaderboardToken=''}}
 // Only the all-time table is left: without a shared sequence a daily board
 // would compare runs that started from different fields.
 async function loadLeaderboard(){try{allScores=(await fetch('/api/leaderboard/scores?game=neon-lines&period=all&limit=5').then(response=>response.json())).scores||[];render()}catch{}}
@@ -101,7 +95,7 @@ const scoreRows=entries=>entries.length?entries.map((entry,index)=>`<p><span>${i
 // until Moscow midnight, with nothing on screen to say so and the failure
 // swallowed whole. On a failure the token is kept as well, so the next game
 // can try again.
-async function submitLeaderboard(){if(SIZE!==RANKED)return;const dailyKey=`neon-lines-daily-best:${moscowDay()}`,dailyBest=Number(localStorage.getItem(dailyKey)||0);if(score<=0||score<=dailyBest||!leaderboardToken)return;const token=leaderboardToken;try{const nickname=await window.requestPlayerName();const response=await fetch('/api/leaderboard/scores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,nickname,score})});if(!response.ok)throw new Error(`сервер ответил ${response.status}`);localStorage.setItem(dailyKey,String(score));leaderboardToken='';await loadLeaderboard()}catch(error){console.warn('Результат не отправлен, попробуем со следующей партии',error)}}
+async function submitLeaderboard(){const dailyKey=`neon-lines-daily-best:${moscowDay()}`,dailyBest=Number(localStorage.getItem(dailyKey)||0);if(score<=0||score<=dailyBest||!leaderboardToken)return;const token=leaderboardToken;try{const nickname=await window.requestPlayerName();const response=await fetch('/api/leaderboard/scores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,nickname,score})});if(!response.ok)throw new Error(`сервер ответил ${response.status}`);localStorage.setItem(dailyKey,String(score));leaderboardToken='';await loadLeaderboard()}catch(error){console.warn('Результат не отправлен, попробуем со следующей партии',error)}}
 function tone(frequency,duration=70,type='square',volume=.035,delay=0){if(muted)return;const AudioEngine=window.AudioContext||window.webkitAudioContext;if(!AudioEngine)return;audio??=new AudioEngine();if(audio.state==='suspended')void audio.resume();const oscillator=audio.createOscillator(),gain=audio.createGain(),start=audio.currentTime+delay;oscillator.type=type;oscillator.frequency.setValueAtTime(frequency,start);gain.gain.setValueAtTime(volume,start);gain.gain.exponentialRampToValueAtTime(.0001,start+duration/1000);oscillator.connect(gain).connect(audio.destination);oscillator.start(start);oscillator.stop(start+duration/1000)}
 function haptic(pattern){try{navigator.vibrate?.(pattern)}catch{}}
 let quakeTimer=0;
@@ -139,8 +133,13 @@ function render(){boardEl.innerHTML='';for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE
 // The curtain lives on the body, not inside the board: it covers the whole
 // screen now and carries its own picture. Rebuilt only when the state behind
 // it changes, so the fade does not replay on every render.
-function overlay(kind,title,text,label,action){const current=document.querySelector('.overlay');if(current?.dataset.kind===kind){current.querySelector('span').textContent=text;return}current?.remove();const art=kind==='start'?`<img class="curtain-sky" src="lines-start-bg.webp" alt="" aria-hidden="true"><img class="curtain-floor" src="lines-start-bg.webp" alt="" aria-hidden="true">`:`<img class="curtain-full" src="lines-over.webp" alt="" aria-hidden="true">`;const sizes=kind==='start'?`<div class="size-pick">${SIZES.map(n=>`<button type="button" data-size="${n}" class="${n===SIZE?'on':''}">${n}×${n}</button>`).join('')}<small>в общую таблицу идёт только ${RANKED}×${RANKED}</small></div>`:'';const el=document.createElement('div');el.className='overlay';el.dataset.kind=kind;el.innerHTML=`${art}<div class="curtain-veil" aria-hidden="true"></div><b>${title}</b><span>${text}</span>${sizes}<button class="go">${label}</button>`;el.querySelector('.go').onclick=action;el.querySelectorAll('[data-size]').forEach(button=>{button.onclick=()=>{chooseSize(Number(button.dataset.size))}});document.body.append(el)}
-async function animatePath(from,path,color){const source=boardEl.children[from[1]*SIZE+from[0]];source.classList.add('ghost');const ball=document.createElement('i');ball.className=`ball route-ball${isWild(color)?' wild':''}`;if(!isWild(color))ball.style.setProperty('--ball',COLORS[color]);ball.style.setProperty('--x',from[0]);ball.style.setProperty('--y',from[1]);boardEl.append(ball);for(let index=0;index<path.length;index++){const[x,y]=path[index];await wait(62);sound.step(index);ball.style.setProperty('--x',x);ball.style.setProperty('--y',y)}await wait(72);ball.remove()}
+function overlay(kind,title,text,label,action){const current=document.querySelector('.overlay');if(current?.dataset.kind===kind){current.querySelector('span').textContent=text;return}current?.remove();const art=kind==='start'?`<img class="curtain-sky" src="lines-start-bg.webp" alt="" aria-hidden="true"><img class="curtain-floor" src="lines-start-bg.webp" alt="" aria-hidden="true">`:`<img class="curtain-full" src="lines-over.webp" alt="" aria-hidden="true">`;const el=document.createElement('div');el.className='overlay';el.dataset.kind=kind;el.innerHTML=`${art}<div class="curtain-veil" aria-hidden="true"></div><b>${title}</b><span>${text}</span><button class="go">${label}</button>`;el.querySelector('.go').onclick=action;document.body.append(el)}
+async function animatePath(from,path,color){const source=boardEl.children[from[1]*SIZE+from[0]];source.classList.add('ghost');const ball=document.createElement('i');/* Летящий шар одевается так же, как лежащий. Раньше особым фишкам здесь
+   ничего не доставалось: цвета у них нет, --ball выходил undefined, и
+   бомба ехала невидимой — на экране она просто взрывалась. */
+  const special=isWild(color)?'wild':isBomb(color)?'bomb':isStone(color)?'stone':'';
+  ball.className=`ball route-ball${special?' '+special:''}`;
+  if(!special)ball.style.setProperty('--ball',COLORS[color]);ball.style.setProperty('--x',from[0]);ball.style.setProperty('--y',from[1]);boardEl.append(ball);for(let index=0;index<path.length;index++){const[x,y]=path[index];await wait(62);sound.step(index);ball.style.setProperty('--x',x);ball.style.setProperty('--y',y)}await wait(72);ball.remove()}
 // Four drawings for the same moment. One burst repeated on every line reads as
 // a stamp; drawing at random reads as an explosion. Relative paths keep them
 // resolving under /lines/.
@@ -175,23 +174,42 @@ async function removeMatches(found){if(!found.size)return false;sound.clear();pi
      дороже прежнего, и строить наконец имеет смысл. Обычная пятёрка стоит
      ровно столько же, сколько стоила, — старые рекорды остаются сравнимы. */
   const gained=50+(found.size-5)*40;score+=gained;clearing=new Set();render();messageEl.textContent=(usedWild?`Волшебный шар подошёл! +${gained}`:`Линия! +${gained}`)+(brokeStones?` Камней осыпалось: ${brokeStones}.`:'');if(nowStage>wasStage){while(nextColors.length<ballsPerTurn())nextColors.push(randomColor());sound.stage();quake(2);render();messageEl.textContent=`ЭТАП ${nowStage}. Теперь по ${ballsPerTurn()} ${ballWord(ballsPerTurn())} за ход.`}return true}
-async function spawnBalls(){const free=freeCells(),created=[];let wildCame=false;for(const color of nextColors){if(!free.length)break;const index=Math.floor(Math.random()*free.length),[x,y]=free.splice(index,1)[0];board[y][x]=color;created.push(id(x,y));if(isWild(color)){wildCame=true;wildLife=5+Math.floor(Math.random()*5);wildBorn=turns}}nextColors=rollNext();born=new Set(created);sound.spawn();render();await wait(540);born=new Set();render();await removeMatches(matches());return wildCame}
+/* Особые фишки появляются редко, и строка сообщений под полем для них слишком
+   тихая: игрок видит новый предмет и не понимает, что это. Поэтому первый раз
+   объяснение выезжает прямо к нему — с самой фишкой, нарисованной рядом.
+   Один раз на устройство: дальше это уже знание, а не новость. */
+const TIPS={
+  [WILD]:['ВОЛШЕБНЫЙ ШАР','Подходит к любому цвету. Живёт несколько ходов и тает — последние два мигает.'],
+  [BOMB]:['БОМБА','Веди её куда хочешь: на месте она сносит всё вокруг себя. Единственное, что убирает камень без линии.'],
+  [STONE]:['КАМЕНЬ','Не двигается и рвёт ряд. Осыплется, если рядом сгорит линия. Или взорви его бомбой.']
+};
+const TIP_KEY='neon-lines-explained:';
+let tipTimer=0;
+function hideTip(){document.querySelector('.tip')?.remove();clearTimeout(tipTimer)}
+function showTip(kind,x,y){
+  const known=TIPS[kind];
+  if(!known)return;
+  try{if(localStorage.getItem(TIP_KEY+kind))return;localStorage.setItem(TIP_KEY+kind,'1')}catch{}
+  hideTip();
+  const el=document.createElement('div');
+  el.className='tip';
+  el.style.setProperty('--x',String(x));
+  el.style.setProperty('--y',String(y));
+  el.dataset.side=y<SIZE/2?'below':'above';
+  el.innerHTML=`<i class="ball ${kind===WILD?'wild':kind===BOMB?'bomb':'stone'}"></i><b></b><span></span>`;
+  el.querySelector('b').textContent=known[0];
+  el.querySelector('span').textContent=known[1];
+  el.onclick=hideTip;
+  boardEl.append(el);
+  tipTimer=setTimeout(hideTip,9000);
+}
+
+async function spawnBalls(){const free=freeCells(),created=[];let wildCame=false,landed=null;for(const color of nextColors){if(!free.length)break;const index=Math.floor(Math.random()*free.length),[x,y]=free.splice(index,1)[0];board[y][x]=color;created.push(id(x,y));if(isWild(color)){wildCame=true;wildLife=5+Math.floor(Math.random()*5);wildBorn=turns}if(color>=WILD)landed=[color,x,y]}nextColors=rollNext();born=new Set(created);sound.spawn();render();await wait(540);born=new Set();render();await removeMatches(matches());if(landed)showTip(landed[0],landed[1],landed[2]);return wildCame}
 /* Куда шар вообще дойдёт. Считается один раз при выборе, а не на каждый
    наведённый курсор: восемьдесят одна клетка обходится за доли миллисекунды,
    но обходить их по разу на движение мыши незачем. Показываем не достижимое,
    а НЕдостижимое: обычно дойти можно почти везде, и подсветка «почти всего»
    была бы шумом, а вот запертый угол — ровно то, что игрок хочет знать. */
-/* Смена размера — это новое поле, поэтому перестраивается всё, а не только
-   сетка: и стартовые шары, и очередь считаются от него. */
-function chooseSize(next){
-  if(!SIZES.includes(next)||next===SIZE)return;
-  SIZE=next;
-  try{localStorage.setItem(SIZE_KEY,String(next))}catch{}
-  boardEl.style.setProperty('--size',String(SIZE));
-  board=freshBoard();selected=null;reachable=null;snapshot=null;
-  wildLife=0;wildBorn=0;turns=0;lines=0;nextColors=rollNext();
-  render()}
-
 function takeSnapshot(){snapshot={board:board.map(row=>[...row]),score,nextColors:[...nextColors],wildLife,wildBorn,lines,turns,message:messageEl.textContent}}
 function undoMove(){
   if(!started||gameOver||locked||!snapshot||undoLeft<=0)return;
@@ -238,6 +256,7 @@ boardEl.addEventListener('pointerleave',clearRoute);
 
 async function handleCell(x,y){
   if(!started||gameOver)return;
+  hideTip();
   if(board[y][x]!==null){
     if(isStone(board[y][x])){messageEl.textContent='Камень не сдвинуть. Собери линию рядом.';return}
     const target=boardEl.children[y*SIZE+x];
@@ -280,7 +299,6 @@ undoEl.onclick=undoMove;if(!muted)tone(520,70,'square',.025)};
 updateSoundButton();
 try{best=Number(localStorage.getItem('neon-lines-best')||0);records=JSON.parse(localStorage.getItem('neon-lines-records')||'[]')}catch{best=0;records=[]}
 pickBurst();rollBalls();
-const savedSize=Number(localStorage.getItem(SIZE_KEY));if(SIZES.includes(savedSize))SIZE=savedSize;
 boardEl.style.setProperty('--size',String(SIZE));
 board=freshBoard();wildLife=0;wildBorn=0;turns=0;lines=0;nextColors=rollNext();score=0;render();
 void loadLeaderboard();

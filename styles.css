@@ -86,15 +86,29 @@ body[data-ball-style] .ball.wild.fading{animation:wild-spin 3.6s linear infinite
    единственный на поле ничего не излучает — он и не должен, он помеха. */
 body[data-ball-style] .ball.bomb{
   position:relative;border:0;border-radius:50%;clip-path:none;
-  background:radial-gradient(circle at 36% 30%,#5c6272,#22262f 46%,#0a0b10 78%);
-  box-shadow:0 0 10px #ff9138aa,inset -4px -5px 9px #000;
+  background:
+    radial-gradient(circle at 50% 50%,#ff9138 0 6%,transparent 7%),
+    radial-gradient(circle at 30% 26%,#6a5040,#2b1c18 44%,#0b0608 76%);
+  box-shadow:0 0 12px #ff913899,0 0 26px #ef435666,inset -5px -6px 11px #000;
+  animation:bomb-pulse 1.1s ease-in-out infinite;
+}
+/* Трещины: две скрещённые полосы раскалённого света поверх тёмного шара —
+   чтобы он читался как «сейчас рванёт», а не как серый камень. */
+body[data-ball-style] .ball.bomb::before{
+  content:'';position:absolute;inset:14%;border-radius:50%;pointer-events:none;
+  background:
+    linear-gradient(58deg,transparent 44%,#ff9138 47%,#ffd13a 50%,#ff9138 53%,transparent 56%),
+    linear-gradient(-34deg,transparent 46%,#ef4356 49%,#ff9138 51%,transparent 54%);
+  opacity:.85;mix-blend-mode:screen;
 }
 body[data-ball-style] .ball.bomb::after{
-  content:'';position:absolute;left:52%;top:-16%;width:18%;height:34%;
-  border-radius:40%;background:linear-gradient(#fff,#ffd13a 45%,#ff9138);
-  box-shadow:0 0 8px #ffd13a;animation:fuse .7s ease-in-out infinite alternate;
+  content:'';position:absolute;left:56%;top:-20%;width:16%;height:30%;
+  border-radius:50% 50% 40% 40%;background:linear-gradient(#fff,#ffd13a 40%,#ff9138);
+  box-shadow:0 0 9px #ffd13a,0 0 18px #ff9138;
+  animation:fuse .42s ease-in-out infinite alternate;
 }
-@keyframes fuse{to{opacity:.35;transform:scaleY(.7)}}
+@keyframes fuse{to{opacity:.4;transform:scale(.72) translateY(8%)}}
+@keyframes bomb-pulse{50%{box-shadow:0 0 18px #ff9138cc,0 0 34px #ef435699,inset -5px -6px 11px #000}}
 
 body[data-ball-style] .ball.stone{
   border:0;border-radius:22%;clip-path:none;
@@ -143,3 +157,25 @@ body[data-ball-style] .ball.stone{
 }
 .route-ball{animation:step-hop-real .18s ease-in-out infinite!important}
 @media(prefers-reduced-motion:reduce){.selected .ball,.route-ball{animation:none!important}}
+
+/* Особые фишки просят position:relative под свои свечения и фитиль, и это
+   правило весит больше, чем `.route-ball` — летящая фишка теряла абсолютное
+   положение, вываливалась в поток сетки и съёживалась до восьми пикселей.
+   Отсюда и «бомба взорвалась, а как летела — не видно». */
+body[data-ball-style] .ball.route-ball{position:absolute}
+
+/* Объяснение особой фишки: выезжает от самой клетки, где она легла. */
+.tip{
+  position:absolute;z-index:9;width:min(220px,62%);
+  left:clamp(0px,calc(var(--x)*100%/var(--size,9) - 22%),calc(100% - min(220px,62%)));
+  padding:9px 11px;display:grid;grid-template-columns:auto 1fr;gap:3px 9px;
+  border:1px solid #7dff00;background:#080a10f2;box-shadow:0 8px 26px #000c,0 0 18px #7dff0033;
+  cursor:pointer;animation:tip-in .28s cubic-bezier(.2,.8,.3,1) both;
+}
+.tip[data-side='below']{top:calc((var(--y) + 1)*100%/var(--size,9) + 6px)}
+.tip[data-side='above']{top:auto;bottom:calc((var(--size,9) - var(--y))*100%/var(--size,9) + 6px)}
+.tip .ball{grid-row:span 2;width:26px;height:26px;margin:0;align-self:center}
+.tip b{align-self:end;color:#b6ff6a;font-size:10px;letter-spacing:.1em}
+.tip span{color:#d5cadb;font-size:9px;line-height:1.45}
+@keyframes tip-in{from{opacity:0;transform:translateY(6px) scale(.96)}}
+@media(prefers-reduced-motion:reduce){.tip{animation:none}}
