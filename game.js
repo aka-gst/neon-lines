@@ -69,9 +69,60 @@ const TOUR_STEPS=[
   {sel:'#next',text:'Три следующих шара. Они лягут на поле после твоего хода.'},
   {sel:'.sidebar-top .meter',text:'Пять одинаковых в ряд — по горизонтали, вертикали или диагонали — сгорают и дают очки.'}
 ];
+/* Панель видов. Открывается только по ?admin: игроку она не нужна, а хозяину
+   нужна редко, поэтому и разметка её строится на месте, а не лежит в странице. */
+function looksPanel(){
+  document.querySelector('.looks')?.remove();
+  const el=document.createElement('div');
+  el.className='looks';
+  el.innerHTML=`<div class="looks-card"><header><b>ЧТО МОЖЕТ ВЫПАСТЬ</b><button type="button" class="looks-close">ЗАКРЫТЬ</button></header>${
+    LOOKS.map(([key,list,attr,title])=>{
+      const allowed=poolOf(key,list);
+      return `<section data-key="${key}" data-attr="${attr}"><small>${title}</small><div>${
+        list.map(([id,name])=>`<button type="button" data-id="${id}" class="${allowed.includes(id)?'on':''}">${name}</button>`).join('')
+      }</div></section>`;
+    }).join('')}<footer><span>Снятые варианты в случайном броске не участвуют. Если снять все — вернутся все.</span><button type="button" class="looks-roll">БРОСИТЬ СЕЙЧАС</button></footer></div>`;
+  el.querySelector('.looks-close').onclick=()=>el.remove();
+  el.querySelector('.looks-roll').onclick=()=>{rollBalls();render()};
+  el.querySelectorAll('section button').forEach(button=>{
+    button.onclick=()=>{
+      const section=button.closest('section'),key=section.dataset.key;
+      const list=LOOKS.find(entry=>entry[0]===key)[1];
+      const on=[...section.querySelectorAll('button.on')].map(b=>b.dataset.id);
+      const next=on.includes(button.dataset.id)?on.filter(id=>id!==button.dataset.id):[...on,button.dataset.id];
+      try{localStorage.setItem(POOL_KEY+key,JSON.stringify(next))}catch{}
+      button.classList.toggle('on');
+      /* Показываем выбранное сразу: панель поверх поля, и всё видно. */
+      document.body.dataset[section.dataset.attr]=button.dataset.id;
+      render();
+    };
+  });
+  document.body.append(el);
+}
+
 function startTour(force){if(!window.Tour)return;if(force)window.Tour.start(TOUR_STEPS);else window.Tour.once('neon-lines',TOUR_STEPS)}
-const BALL_STYLES=['glass','tube','crt','candy','facet'];
-function rollBalls(){const previous=document.body.dataset.ballStyle;const pool=BALL_STYLES.filter(style=>style!==previous);document.body.dataset.ballStyle=pool[Math.floor(Math.random()*pool.length)]}
+/* Вид шаров, вид поля и фон бросаются каждую партию. Что именно может выпасть,
+   выбирается в панели по ?admin: снял галочку — этот вариант больше не придёт.
+   Пустой список значит «всё разрешено», иначе один снятый крестик оставил бы
+   игру без внешности вообще. */
+const BALL_STYLES=[['glass','СТЕКЛО'],['tube','ТРУБКА'],['crt','ЭЛТ'],['candy','ЛЕДЕНЕЦ'],['facet','ОГРАНКА']];
+const BOARD_STYLES=[['grid','СЕТКА'],['void','ПУСТОТА'],['scan','РАЗВЁРТКА'],['tile','ПЛИТКА']];
+const BACK_STYLES=[['void','ЧЁРНЫЙ'],['violet','ФИОЛЕТ'],['ember','УГЛИ'],['ice','ЛЁД']];
+const LOOKS=[['balls',BALL_STYLES,'ballStyle','ШАРЫ'],['board',BOARD_STYLES,'boardStyle','ПОЛЕ'],['back',BACK_STYLES,'backStyle','ФОН']];
+const POOL_KEY='neon-lines-pool:';
+function poolOf(key,list){
+  let saved=[];
+  try{saved=JSON.parse(localStorage.getItem(POOL_KEY+key)||'[]')}catch{}
+  const allowed=list.filter(([id])=>saved.includes(id));
+  return allowed.length?allowed.map(([id])=>id):list.map(([id])=>id);
+}
+function rollBalls(){
+  for(const[key,list,attr]of LOOKS){
+    const allowed=poolOf(key,list),previous=document.body.dataset[attr];
+    const choices=allowed.length>1?allowed.filter(id=>id!==previous):allowed;
+    document.body.dataset[attr]=choices[Math.floor(Math.random()*choices.length)];
+  }
+}
 const boardEl=document.querySelector('#board'),messageEl=document.querySelector('#message'),scoreEl=document.querySelector('#score'),stageEl=document.querySelector('#stage'),bestEl=document.querySelector('#best'),nextEl=document.querySelector('#next'),recordsEl=document.querySelector('#records'),undoEl=document.querySelector('#undo');
 document.addEventListener('dblclick',event=>event.preventDefault(),{passive:false});
 let board,selected,nextColors,score,best,records,started=false,gameOver=false,locked=false,born=new Set(),clearing=new Set(),startedAt=0,leaderboardToken='',allScores=[],turns=0,nextWisdomAt=9;
@@ -293,10 +344,19 @@ function restart(){sound.start();rollBalls();startedAt=Date.now();void beginLead
 document.querySelector('#restart').onclick=()=>{if(started&&!gameOver&&!confirm('Начать новую игру? Текущий результат будет потерян.'))return;restart()};
 const soundToggle=document.querySelector('#sound-toggle');
 function updateSoundButton(){soundToggle.textContent=`ЗВУК: ${muted?'ВЫКЛ':'ВКЛ'}`}
-soundToggle.onclick=()=>{muted=!muted;localStorage.setItem('neon-lines-muted',muted?'1':'0');updateSoundButton();
-document.getElementById('how').onclick=()=>startTour(true);
-undoEl.onclick=undoMove;if(!muted)tone(520,70,'square',.025)};
+soundToggle.onclick=()=>{muted=!muted;localStorage.setItem('neon-lines-muted',muted?'1':'0');updateSoundButton();if(!muted)tone(520,70,'square',.025)};
 updateSoundButton();
+/* Обработчики кнопок вешаются здесь, на верхнем уровне. Раньше они по ошибке
+   попали внутрь обработчика кнопки звука: «как играть» и «откат» оживали
+   только после того, как игрок нажмёт «звук», и до этого молчали. */
+document.getElementById('how').onclick=()=>startTour(true);
+undoEl.onclick=undoMove;
+if(new URLSearchParams(location.search).has('admin')){
+  const button=document.createElement('button');
+  button.id='looks-open';button.className='action';button.textContent='\u2699 \u0412\u0418\u0414\u042b';
+  button.onclick=looksPanel;
+  document.getElementById('how').after(button);
+}
 try{best=Number(localStorage.getItem('neon-lines-best')||0);records=JSON.parse(localStorage.getItem('neon-lines-records')||'[]')}catch{best=0;records=[]}
 pickBurst();rollBalls();
 boardEl.style.setProperty('--size',String(SIZE));

@@ -179,3 +179,29 @@ body[data-ball-style] .ball.route-ball{position:absolute}
 .tip span{color:#d5cadb;font-size:9px;line-height:1.45}
 @keyframes tip-in{from{opacity:0;transform:translateY(6px) scale(.96)}}
 @media(prefers-reduced-motion:reduce){.tip{animation:none}}
+
+/* Виды поля. Сетка — как было; пустота убирает её вовсе; развёртка кладёт
+   строчки ЭЛТ; плитка делает из клеток чуть приподнятые квадраты. */
+body[data-board-style='void'] .cell{border-color:transparent;box-shadow:none}
+body[data-board-style='scan'] .board{background:repeating-linear-gradient(0deg,#03030a 0 2px,#08060f 2px 4px)}
+body[data-board-style='scan'] .cell{border-color:#100c1a}
+body[data-board-style='tile'] .cell{background:linear-gradient(158deg,#12101c,#08070e);box-shadow:inset 1px 1px 0 #201c30,inset -1px -1px 0 #05040a;border-color:#0b0912}
+
+/* Фоны страницы. Развёртка поверх остаётся во всех. */
+body[data-back-style='violet']{background:repeating-linear-gradient(0deg,#87ffd514 0 1px,transparent 1px 4px),radial-gradient(circle at 50% 0,#1c1236,#0a0618 48%,#040209 82%)}
+body[data-back-style='ember']{background:repeating-linear-gradient(0deg,#87ffd514 0 1px,transparent 1px 4px),radial-gradient(circle at 50% 108%,#2a1208,#100710 52%,#040208 84%)}
+body[data-back-style='ice']{background:repeating-linear-gradient(0deg,#87ffd514 0 1px,transparent 1px 4px),radial-gradient(circle at 50% -6%,#0d2233,#060d1a 50%,#02040a 84%)}
+
+/* Панель видов. */
+.looks{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:18px;background:#03000699;backdrop-filter:blur(4px)}
+.looks-card{width:min(94vw,520px);max-height:88dvh;overflow:auto;padding:16px;border:2px solid #4a5160;background:linear-gradient(140deg,#12131b,#06070b);box-shadow:8px 8px 0 #000}
+.looks-card header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.looks-card header b{color:#efff00;font-size:13px;letter-spacing:.12em}
+.looks-card section{margin-bottom:13px}
+.looks-card small{display:block;margin-bottom:6px;color:#767c8b;font-size:8px;letter-spacing:.14em}
+.looks-card section div{display:flex;flex-wrap:wrap;gap:6px}
+.looks-card button{width:auto;min-width:0;min-height:0;padding:7px 12px;border:1px solid #3d4251;background:#0d0f16;color:#9aa0ae;font:bold 9px ui-monospace,monospace;letter-spacing:.08em;box-shadow:none}
+.looks-card section button.on{border-color:#7dff00;background:#10210a;color:#b6ff6a}
+.looks-card footer{display:flex;align-items:center;gap:12px;margin-top:6px;padding-top:11px;border-top:1px solid #23262f}
+.looks-card footer span{flex:1;color:#767c8b;font-size:8px;line-height:1.5}
+#looks-open{grid-column:1/-1;border-color:#efff00;background:#191505;color:#efff00}
