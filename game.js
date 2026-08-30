@@ -111,10 +111,12 @@ function warmLooks(){
    доски задаётся явно — в скрытой вкладке спросить его не у кого. */
 let showcasing=false;
 const SHOWCASE_LOOK={ballStyle:'plasma',boardStyle:'grid',backStyle:'void'};
+const SHOWCASE_BURST='art/burst-j.png';
 
 function scene(options={}){
   const width=options.width||420;
   showcasing=true;
+  posedBurst=options.burst||SHOWCASE_BURST;pickBurst();
   muted=true;
   hideTip();
   document.querySelector('.overlay')?.remove();
@@ -163,7 +165,7 @@ async function showcase(options={}){
   return {planned:2660,measured:Date.now()-began,cleared:8,
     phases:{пауза:380,полёт:1150,посадка:220,взрыв:430,хвост:480}};
 }
-window.lines={scene,showcase,look:SHOWCASE_LOOK};
+window.lines={scene,showcase,look:SHOWCASE_LOOK,burst:SHOWCASE_BURST,release:()=>{posedBurst=null;showcasing=false}};
 
 function looksPanel(){
   document.querySelector('.looks')?.remove();
@@ -316,7 +318,10 @@ async function animatePath(from,path,color){const source=boardEl.children[from[1
 // a stamp; drawing at random reads as an explosion. Relative paths keep them
 // resolving under /lines/.
 const BURSTS=['burst.png','art/burst-j.png','art/burst-k.png'];
-function pickBurst(){const file=BURSTS[Math.floor(Math.random()*BURSTS.length)];document.documentElement.style.setProperty('--burst',`url(${new URL(file,document.baseURI).href})`)}
+/* Витрина закрепляет картинку: их три, а взрыв за сцену случается дважды, и
+   разными кадрами дубли перестают совпадать. Пусто в обычной игре. */
+let posedBurst=null;
+function pickBurst(){const file=posedBurst||BURSTS[Math.floor(Math.random()*BURSTS.length)];document.documentElement.style.setProperty('--burst',`url(${new URL(file,document.baseURI).href})`)}
 /* Камень уходит, когда рядом что-нибудь сгорело: иначе он остался бы навсегда
    и поле медленно каменело. Это и есть ответ на вопрос «что с ним делать» —
    собрать линию рядом. */
