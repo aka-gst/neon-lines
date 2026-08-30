@@ -74,6 +74,28 @@ const TOUR_STEPS=[
 ];
 /* Панель видов. Открывается только по ?admin: игроку она не нужна, а хозяину
    нужна редко, поэтому и разметка её строится на месте, а не лежит в странице. */
+/* Первый показ набора, которого нет в офлайн-копии, ждёт сети: на пробе
+   кристаллы появились через шесть секунд после броска, и всё это время клетки
+   стояли пустыми. Поэтому остальные наборы подтягиваются фоном сразу после
+   начала партии — по одному файлу за раз, чтобы не толкаться с самой игрой.
+   Дальше они лежат в кэше, и жребий может брать любой. */
+let warmed=false;
+function warmLooks(){
+  if(warmed)return;
+  warmed=true;
+  const files=[];
+  for(const[style]of BALL_STYLES)for(const colour of COLOR_NAMES)files.push(`art/ball-${style}-${colour}.png`);
+  files.push('art/burst-j.png','art/burst-k.png');
+  let index=0;
+  const next=()=>{
+    if(index>=files.length)return;
+    const image=new Image();
+    image.onload=image.onerror=()=>setTimeout(next,120);
+    image.src=files[index++];
+  };
+  setTimeout(next,1500);
+}
+
 function looksPanel(){
   document.querySelector('.looks')?.remove();
   const el=document.createElement('div');
@@ -350,7 +372,7 @@ async function handleCell(x,y){
   locked=false;render()}
 
 function finishScore(){sound.over();quake(3);window.umami?.track('game-finish',{game:'neon-lines',score,duration_seconds:Math.round((Date.now()-startedAt)/1000)});void submitLeaderboard();records=[...records,score].sort((a,b)=>b-a).slice(0,5);best=Math.max(best,score);localStorage.setItem('neon-lines-records',JSON.stringify(records));localStorage.setItem('neon-lines-best',String(best))}
-function restart(){sound.start();rollBalls();startedAt=Date.now();void beginLeaderboard();window.umami?.track('game-start',{game:'neon-lines'});board=freshBoard();selected=null;reachable=null;snapshot=null;undoLeft=UNDO_TOTAL;wildLife=0;wildBorn=0;score=0;turns=0;lines=0;nextColors=rollNext();nextWisdomAt=8+Math.floor(Math.random()*5);started=true;gameOver=false;locked=false;born=new Set();board.forEach((row,y)=>row.forEach((value,x)=>{if(value!==null)born.add(id(x,y))}));messageEl.textContent='Собери пять одинаковых шаров.';render();setTimeout(()=>{born=new Set();render()},520);setTimeout(()=>startTour(false),900)}
+function restart(){sound.start();rollBalls();startedAt=Date.now();void beginLeaderboard();window.umami?.track('game-start',{game:'neon-lines'});board=freshBoard();selected=null;reachable=null;snapshot=null;undoLeft=UNDO_TOTAL;wildLife=0;wildBorn=0;score=0;turns=0;lines=0;nextColors=rollNext();nextWisdomAt=8+Math.floor(Math.random()*5);started=true;gameOver=false;locked=false;born=new Set();board.forEach((row,y)=>row.forEach((value,x)=>{if(value!==null)born.add(id(x,y))}));messageEl.textContent='Собери пять одинаковых шаров.';render();warmLooks();setTimeout(()=>{born=new Set();render()},520);setTimeout(()=>startTour(false),900)}
 document.querySelector('#restart').onclick=()=>{if(started&&!gameOver&&!confirm('Начать новую игру? Текущий результат будет потерян.'))return;restart()};
 const soundToggle=document.querySelector('#sound-toggle');
 function updateSoundButton(){soundToggle.textContent=`ЗВУК: ${muted?'ВЫКЛ':'ВКЛ'}`}
