@@ -222,7 +222,25 @@ async function animatePath(from,path,color){const source=boardEl.children[from[1
    бомба ехала невидимой — на экране она просто взрывалась. */
   const special=isWild(color)?'wild':isBomb(color)?'bomb':isStone(color)?'stone':'';
   ball.className=`ball route-ball${special?' '+special:''}`;
-  if(!special){ball.dataset.colour=COLOR_NAMES[color];ball.style.setProperty('--ball',COLORS[color])}ball.style.setProperty('--x',from[0]);ball.style.setProperty('--y',from[1]);boardEl.append(ball);for(let index=0;index<path.length;index++){const[x,y]=path[index];await wait(62);sound.step(index);ball.style.setProperty('--x',x);ball.style.setProperty('--y',y)}await wait(72);ball.remove()}
+  if(!special){ball.dataset.colour=COLOR_NAMES[color];ball.style.setProperty('--ball',COLORS[color])}ball.style.setProperty('--x',from[0]);ball.style.setProperty('--y',from[1]);boardEl.append(ball);
+  /* Особая фишка едет заметно медленнее обычной и оставляет за собой след.
+     Шестьдесят две миллисекунды на клетку — меньше четырёх кадров: обычный шар
+     так и должен проскакивать, а вот про бомбу игрок должен успеть понять,
+     откуда и куда она пошла, иначе механика читается как «просто взорвалось».
+     И перед самым взрывом — пауза, чтобы взгляд успел приземлиться там же,
+     где она. */
+  const step=special?115:62;
+  const trail=[];
+  for(let index=0;index<path.length;index++){
+    const[x,y]=path[index];
+    await wait(step);
+    sound.step(index);
+    ball.style.setProperty('--x',x);ball.style.setProperty('--y',y);
+    if(special){const cell=boardEl.children[y*SIZE+x];if(cell){cell.classList.add('trail');trail.push(cell)}}
+  }
+  await wait(special?220:72);
+  trail.forEach(cell=>cell.classList.remove('trail'));
+  ball.remove()}
 // Four drawings for the same moment. One burst repeated on every line reads as
 // a stamp; drawing at random reads as an explosion. Relative paths keep them
 // resolving under /lines/.
