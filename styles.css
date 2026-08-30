@@ -201,40 +201,40 @@ body[data-back-style='ice']{background:repeating-linear-gradient(0deg,#87ffd514 
 .looks-card footer span{flex:1;color:#767c8b;font-size:8px;line-height:1.5}
 #looks-open{grid-column:1/-1;border-color:#efff00;background:#191505;color:#efff00}
 
-/* Картинки шаров: пара «вид + цвет» — своя. Под картинкой лежит вторым слоем
-   мягкое пятно цвета: если файл ещё не приехал или не приехал вовсе, шар
-   всё равно нужного цвета, а не дырка в поле. Слой второй, а не
-   background-color, чтобы не выглядывать жёстким кругом из-под прозрачных
-   краёв картинки. */
-body[data-ball-style] .ball{border-radius:50%;background:radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%) center/contain no-repeat}
-body[data-ball-style='glass'] .ball[data-colour='red']{background-image:url(art/ball-glass-red.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='glass'] .ball[data-colour='yellow']{background-image:url(art/ball-glass-yellow.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='glass'] .ball[data-colour='green']{background-image:url(art/ball-glass-green.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='glass'] .ball[data-colour='blue']{background-image:url(art/ball-glass-blue.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='glass'] .ball[data-colour='violet']{background-image:url(art/ball-glass-violet.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='glass'] .ball[data-colour='pink']{background-image:url(art/ball-glass-pink.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='glass'] .ball[data-colour='orange']{background-image:url(art/ball-glass-orange.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='core'] .ball[data-colour='red']{background-image:url(art/ball-core-red.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='core'] .ball[data-colour='yellow']{background-image:url(art/ball-core-yellow.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='core'] .ball[data-colour='green']{background-image:url(art/ball-core-green.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='core'] .ball[data-colour='blue']{background-image:url(art/ball-core-blue.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='core'] .ball[data-colour='violet']{background-image:url(art/ball-core-violet.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='core'] .ball[data-colour='pink']{background-image:url(art/ball-core-pink.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='core'] .ball[data-colour='orange']{background-image:url(art/ball-core-orange.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='crystal'] .ball[data-colour='red']{background-image:url(art/ball-crystal-red.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='crystal'] .ball[data-colour='yellow']{background-image:url(art/ball-crystal-yellow.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='crystal'] .ball[data-colour='green']{background-image:url(art/ball-crystal-green.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='crystal'] .ball[data-colour='blue']{background-image:url(art/ball-crystal-blue.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='crystal'] .ball[data-colour='violet']{background-image:url(art/ball-crystal-violet.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='crystal'] .ball[data-colour='pink']{background-image:url(art/ball-crystal-pink.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='crystal'] .ball[data-colour='orange']{background-image:url(art/ball-crystal-orange.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='plasma'] .ball[data-colour='red']{background-image:url(art/ball-plasma-red.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='plasma'] .ball[data-colour='yellow']{background-image:url(art/ball-plasma-yellow.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='plasma'] .ball[data-colour='green']{background-image:url(art/ball-plasma-green.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='plasma'] .ball[data-colour='blue']{background-image:url(art/ball-plasma-blue.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='plasma'] .ball[data-colour='violet']{background-image:url(art/ball-plasma-violet.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='plasma'] .ball[data-colour='pink']{background-image:url(art/ball-plasma-pink.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
-body[data-ball-style='plasma'] .ball[data-colour='orange']{background-image:url(art/ball-plasma-orange.png),radial-gradient(circle at 50% 46%,var(--ball) 0 30%,color-mix(in srgb,var(--ball),transparent 55%) 52%,transparent 70%)}
+/* Картинки шаров: пара «вид + цвет» — своя. Подложки под ними нет: пробовала
+   класть вторым слоем пятно цвета на случай, если файл опоздает, — и оно
+   заливало дырку, которую набор «ядро» оставляет нарочно. Полый шар с
+   закрашенной серединой перестаёт быть полым. Картинки лежат на своём
+   домене и в офлайн-копии; не приехавшая честнее выглядит пропуском. */
+body[data-ball-style] .ball{border-radius:50%;background:center/contain no-repeat}
+body[data-ball-style='glass'] .ball[data-colour='red']{background-image:url(art/ball-glass-red.png)}
+body[data-ball-style='glass'] .ball[data-colour='yellow']{background-image:url(art/ball-glass-yellow.png)}
+body[data-ball-style='glass'] .ball[data-colour='green']{background-image:url(art/ball-glass-green.png)}
+body[data-ball-style='glass'] .ball[data-colour='blue']{background-image:url(art/ball-glass-blue.png)}
+body[data-ball-style='glass'] .ball[data-colour='violet']{background-image:url(art/ball-glass-violet.png)}
+body[data-ball-style='glass'] .ball[data-colour='pink']{background-image:url(art/ball-glass-pink.png)}
+body[data-ball-style='glass'] .ball[data-colour='orange']{background-image:url(art/ball-glass-orange.png)}
+body[data-ball-style='core'] .ball[data-colour='red']{background-image:url(art/ball-core-red.png)}
+body[data-ball-style='core'] .ball[data-colour='yellow']{background-image:url(art/ball-core-yellow.png)}
+body[data-ball-style='core'] .ball[data-colour='green']{background-image:url(art/ball-core-green.png)}
+body[data-ball-style='core'] .ball[data-colour='blue']{background-image:url(art/ball-core-blue.png)}
+body[data-ball-style='core'] .ball[data-colour='violet']{background-image:url(art/ball-core-violet.png)}
+body[data-ball-style='core'] .ball[data-colour='pink']{background-image:url(art/ball-core-pink.png)}
+body[data-ball-style='core'] .ball[data-colour='orange']{background-image:url(art/ball-core-orange.png)}
+body[data-ball-style='crystal'] .ball[data-colour='red']{background-image:url(art/ball-crystal-red.png)}
+body[data-ball-style='crystal'] .ball[data-colour='yellow']{background-image:url(art/ball-crystal-yellow.png)}
+body[data-ball-style='crystal'] .ball[data-colour='green']{background-image:url(art/ball-crystal-green.png)}
+body[data-ball-style='crystal'] .ball[data-colour='blue']{background-image:url(art/ball-crystal-blue.png)}
+body[data-ball-style='crystal'] .ball[data-colour='violet']{background-image:url(art/ball-crystal-violet.png)}
+body[data-ball-style='crystal'] .ball[data-colour='pink']{background-image:url(art/ball-crystal-pink.png)}
+body[data-ball-style='crystal'] .ball[data-colour='orange']{background-image:url(art/ball-crystal-orange.png)}
+body[data-ball-style='plasma'] .ball[data-colour='red']{background-image:url(art/ball-plasma-red.png)}
+body[data-ball-style='plasma'] .ball[data-colour='yellow']{background-image:url(art/ball-plasma-yellow.png)}
+body[data-ball-style='plasma'] .ball[data-colour='green']{background-image:url(art/ball-plasma-green.png)}
+body[data-ball-style='plasma'] .ball[data-colour='blue']{background-image:url(art/ball-plasma-blue.png)}
+body[data-ball-style='plasma'] .ball[data-colour='violet']{background-image:url(art/ball-plasma-violet.png)}
+body[data-ball-style='plasma'] .ball[data-colour='pink']{background-image:url(art/ball-plasma-pink.png)}
+body[data-ball-style='plasma'] .ball[data-colour='orange']{background-image:url(art/ball-plasma-orange.png)}
 body[data-ball-style] .ball.wild{background:url(art/ball-wild.png) center/contain no-repeat;border:0;border-radius:50%;clip-path:none;box-shadow:none;position:relative;animation:none}
 body[data-ball-style] .ball.wild::before,body[data-ball-style] .ball.wild::after{content:none}
 body[data-ball-style] .ball.bomb{background:url(art/ball-bomb.png) center/contain no-repeat;border:0;border-radius:50%;clip-path:none;box-shadow:none;position:relative;animation:none}
