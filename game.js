@@ -43,11 +43,14 @@ const wildAt=()=>{for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++)if(isWild(board[
 const wildLeft=()=>wildLife?wildLife-(turns-wildBorn):0;
 // Мигать начинает за два хода до конца: неожиданное исчезновение читалось бы
 // как сбой, а не как правило.
+/* Картинка выбирается стилями по паре «вид + цвет», поэтому разметка несёт
+   только имя цвета. Под картинкой лежит заливка --ball: пока файл не приехал,
+   шар всё равно нужного цвета, а не дырка. */
 const ballTag=index=>isWild(index)
   ?`<i class="ball wild${wildLeft()>0&&wildLeft()<=2?' fading':''}"></i>`
   :isBomb(index)?'<i class="ball bomb"></i>'
   :isStone(index)?'<i class="ball stone"></i>'
-  :`<i class="ball" style="--ball:${COLORS[index]}"></i>`;
+  :`<i class="ball" data-colour="${COLOR_NAMES[index]}" style="--ball:${COLORS[index]}"></i>`;
 // Один волшебный на поле за раз и не чаще, чем примерно раз в семь выбросов.
 /* Особая фишка приходит в очереди, как обычная: её видно заранее, и к ней
    можно готовиться. Больше одной за раз не бывает — иначе ход перестаёт быть
@@ -105,7 +108,8 @@ function startTour(force){if(!window.Tour)return;if(force)window.Tour.start(TOUR
    выбирается в панели по ?admin: снял галочку — этот вариант больше не придёт.
    Пустой список значит «всё разрешено», иначе один снятый крестик оставил бы
    игру без внешности вообще. */
-const BALL_STYLES=[['glass','СТЕКЛО'],['tube','ТРУБКА'],['crt','ЭЛТ'],['candy','ЛЕДЕНЕЦ'],['facet','ОГРАНКА']];
+const BALL_STYLES=[['glass','СТЕКЛО'],['core','ЯДРО'],['crystal','КРИСТАЛЛ'],['plasma','ПЛАЗМА']];
+const COLOR_NAMES=['red','yellow','green','blue','violet','pink','orange'];
 const BOARD_STYLES=[['grid','СЕТКА'],['void','ПУСТОТА'],['scan','РАЗВЁРТКА'],['tile','ПЛИТКА']];
 const BACK_STYLES=[['void','ЧЁРНЫЙ'],['violet','ФИОЛЕТ'],['ember','УГЛИ'],['ice','ЛЁД']];
 const LOOKS=[['balls',BALL_STYLES,'ballStyle','ШАРЫ'],['board',BOARD_STYLES,'boardStyle','ПОЛЕ'],['back',BACK_STYLES,'backStyle','ФОН']];
@@ -184,17 +188,23 @@ function render(){boardEl.innerHTML='';for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE
 // The curtain lives on the body, not inside the board: it covers the whole
 // screen now and carries its own picture. Rebuilt only when the state behind
 // it changes, so the fade does not replay on every render.
-function overlay(kind,title,text,label,action){const current=document.querySelector('.overlay');if(current?.dataset.kind===kind){current.querySelector('span').textContent=text;return}current?.remove();const art=kind==='start'?`<img class="curtain-sky" src="lines-start-bg.webp" alt="" aria-hidden="true"><img class="curtain-floor" src="lines-start-bg.webp" alt="" aria-hidden="true">`:`<img class="curtain-full" src="lines-over.webp" alt="" aria-hidden="true">`;const el=document.createElement('div');el.className='overlay';el.dataset.kind=kind;el.innerHTML=`${art}<div class="curtain-veil" aria-hidden="true"></div><b>${title}</b><span>${text}</span><button class="go">${label}</button>`;el.querySelector('.go').onclick=action;document.body.append(el)}
+function overlay(kind,title,text,label,action){const current=document.querySelector('.overlay');if(current?.dataset.kind===kind){current.querySelector('span').textContent=text;return}current?.remove();/* Кадр берётся под форму экрана: вертикальный на телефон, широкий на
+   компьютер. Скачивается ровно один — второй устройству не нужен. */
+  const wide=innerWidth>=innerHeight;
+  const art=kind==='start'
+    ?(wide?`<img class="curtain-full" src="art/lines-start-wide.png" alt="" aria-hidden="true">`
+          :`<img class="curtain-sky" src="art/lines-start-tall.png" alt="" aria-hidden="true"><img class="curtain-floor" src="art/lines-start-tall.png" alt="" aria-hidden="true">`)
+    :`<img class="curtain-full" src="art/lines-over-wide.png" alt="" aria-hidden="true">`;const el=document.createElement('div');el.className='overlay';el.dataset.kind=kind;el.innerHTML=`${art}<div class="curtain-veil" aria-hidden="true"></div><b>${title}</b><span>${text}</span><button class="go">${label}</button>`;el.querySelector('.go').onclick=action;document.body.append(el)}
 async function animatePath(from,path,color){const source=boardEl.children[from[1]*SIZE+from[0]];source.classList.add('ghost');const ball=document.createElement('i');/* Летящий шар одевается так же, как лежащий. Раньше особым фишкам здесь
    ничего не доставалось: цвета у них нет, --ball выходил undefined, и
    бомба ехала невидимой — на экране она просто взрывалась. */
   const special=isWild(color)?'wild':isBomb(color)?'bomb':isStone(color)?'stone':'';
   ball.className=`ball route-ball${special?' '+special:''}`;
-  if(!special)ball.style.setProperty('--ball',COLORS[color]);ball.style.setProperty('--x',from[0]);ball.style.setProperty('--y',from[1]);boardEl.append(ball);for(let index=0;index<path.length;index++){const[x,y]=path[index];await wait(62);sound.step(index);ball.style.setProperty('--x',x);ball.style.setProperty('--y',y)}await wait(72);ball.remove()}
+  if(!special){ball.dataset.colour=COLOR_NAMES[color];ball.style.setProperty('--ball',COLORS[color])}ball.style.setProperty('--x',from[0]);ball.style.setProperty('--y',from[1]);boardEl.append(ball);for(let index=0;index<path.length;index++){const[x,y]=path[index];await wait(62);sound.step(index);ball.style.setProperty('--x',x);ball.style.setProperty('--y',y)}await wait(72);ball.remove()}
 // Four drawings for the same moment. One burst repeated on every line reads as
 // a stamp; drawing at random reads as an explosion. Relative paths keep them
 // resolving under /lines/.
-const BURSTS=['burst.png','burst-g.webp','burst-h.webp','burst-i.webp'];
+const BURSTS=['burst.png','art/burst-j.png','art/burst-k.png'];
 function pickBurst(){const file=BURSTS[Math.floor(Math.random()*BURSTS.length)];document.documentElement.style.setProperty('--burst',`url(${new URL(file,document.baseURI).href})`)}
 /* Камень уходит, когда рядом что-нибудь сгорело: иначе он остался бы навсегда
    и поле медленно каменело. Это и есть ответ на вопрос «что с ним делать» —

@@ -28,11 +28,6 @@ body{background:repeating-linear-gradient(0deg,#87ffd514 0 1px,transparent 1px 4
 .overlay > button{min-width:min(88vw,620px);min-height:clamp(88px,21vh,132px);font-size:clamp(30px,8vw,52px)}
 .game-home-menu{opacity:.58!important;border-color:#313442!important;color:#d5cadb!important;font-size:8px!important}
 body[data-ball-style] .ball{border-radius:50%;background:var(--ball)}
-body[data-ball-style='glass'] .ball{background:radial-gradient(circle at 32% 26%,#fff 0 6%,transparent 7%),radial-gradient(circle at 45% 40%,color-mix(in srgb,var(--ball) 90%,white),var(--ball) 44%,#08040d 78%);box-shadow:0 0 12px var(--ball),inset 0 -6px 8px #0009}
-body[data-ball-style='tube'] .ball{background:#07040d;border:clamp(2px,.45vw,5px) solid var(--ball);box-shadow:0 0 11px var(--ball),inset 0 0 9px var(--ball)}
-body[data-ball-style='crt'] .ball{border:2px solid var(--ball);background:repeating-linear-gradient(0deg,var(--ball) 0 2px,#07040d 2px 4px);box-shadow:0 0 10px var(--ball)}
-body[data-ball-style='candy'] .ball{background:radial-gradient(circle at 32% 25%,#fff 0 7%,transparent 8%),linear-gradient(145deg,color-mix(in srgb,var(--ball) 55%,white),var(--ball) 52%,#120618);box-shadow:0 0 12px var(--ball)}
-body[data-ball-style='facet'] .ball{border-radius:28%;clip-path:polygon(29% 0,71% 0,100% 29%,100% 71%,71% 100%,29% 100%,0 71%,0 29%);background:conic-gradient(from 22.5deg,var(--ball),#09040d,var(--ball),white,var(--ball));box-shadow:0 0 13px var(--ball)}
 @media(max-width:680px){.stage{padding-top:40px;gap:3px}.board{width:min(calc(100vw - 14px),calc(100dvh - 188px))}.sidebar-bottom{margin-top:0;padding:3px}.message{min-height:22px;margin-top:2px;padding:3px 6px}.overlay > button{min-height:clamp(88px,21vh,132px)}}
 
 /* The curtain went full screen in the pass above, which left it with no
@@ -205,3 +200,41 @@ body[data-back-style='ice']{background:repeating-linear-gradient(0deg,#87ffd514 
 .looks-card footer{display:flex;align-items:center;gap:12px;margin-top:6px;padding-top:11px;border-top:1px solid #23262f}
 .looks-card footer span{flex:1;color:#767c8b;font-size:8px;line-height:1.5}
 #looks-open{grid-column:1/-1;border-color:#efff00;background:#191505;color:#efff00}
+
+/* Картинки шаров: пара «вид + цвет» — своя. Под ними остаётся заливка
+   --ball, так что до приезда файла шар всё равно нужного цвета. */
+body[data-ball-style] .ball{border-radius:50%;background:var(--ball) center/contain no-repeat}
+body[data-ball-style='glass'] .ball[data-colour='red']{background-image:url(art/ball-glass-red.png);background-color:transparent}
+body[data-ball-style='glass'] .ball[data-colour='yellow']{background-image:url(art/ball-glass-yellow.png);background-color:transparent}
+body[data-ball-style='glass'] .ball[data-colour='green']{background-image:url(art/ball-glass-green.png);background-color:transparent}
+body[data-ball-style='glass'] .ball[data-colour='blue']{background-image:url(art/ball-glass-blue.png);background-color:transparent}
+body[data-ball-style='glass'] .ball[data-colour='violet']{background-image:url(art/ball-glass-violet.png);background-color:transparent}
+body[data-ball-style='glass'] .ball[data-colour='pink']{background-image:url(art/ball-glass-pink.png);background-color:transparent}
+body[data-ball-style='glass'] .ball[data-colour='orange']{background-image:url(art/ball-glass-orange.png);background-color:transparent}
+body[data-ball-style='core'] .ball[data-colour='red']{background-image:url(art/ball-core-red.png);background-color:transparent}
+body[data-ball-style='core'] .ball[data-colour='yellow']{background-image:url(art/ball-core-yellow.png);background-color:transparent}
+body[data-ball-style='core'] .ball[data-colour='green']{background-image:url(art/ball-core-green.png);background-color:transparent}
+body[data-ball-style='core'] .ball[data-colour='blue']{background-image:url(art/ball-core-blue.png);background-color:transparent}
+body[data-ball-style='core'] .ball[data-colour='violet']{background-image:url(art/ball-core-violet.png);background-color:transparent}
+body[data-ball-style='core'] .ball[data-colour='pink']{background-image:url(art/ball-core-pink.png);background-color:transparent}
+body[data-ball-style='core'] .ball[data-colour='orange']{background-image:url(art/ball-core-orange.png);background-color:transparent}
+body[data-ball-style='crystal'] .ball[data-colour='red']{background-image:url(art/ball-crystal-red.png);background-color:transparent}
+body[data-ball-style='crystal'] .ball[data-colour='yellow']{background-image:url(art/ball-crystal-yellow.png);background-color:transparent}
+body[data-ball-style='crystal'] .ball[data-colour='green']{background-image:url(art/ball-crystal-green.png);background-color:transparent}
+body[data-ball-style='crystal'] .ball[data-colour='blue']{background-image:url(art/ball-crystal-blue.png);background-color:transparent}
+body[data-ball-style='crystal'] .ball[data-colour='violet']{background-image:url(art/ball-crystal-violet.png);background-color:transparent}
+body[data-ball-style='crystal'] .ball[data-colour='pink']{background-image:url(art/ball-crystal-pink.png);background-color:transparent}
+body[data-ball-style='crystal'] .ball[data-colour='orange']{background-image:url(art/ball-crystal-orange.png);background-color:transparent}
+body[data-ball-style='plasma'] .ball[data-colour='red']{background-image:url(art/ball-plasma-red.png);background-color:transparent}
+body[data-ball-style='plasma'] .ball[data-colour='yellow']{background-image:url(art/ball-plasma-yellow.png);background-color:transparent}
+body[data-ball-style='plasma'] .ball[data-colour='green']{background-image:url(art/ball-plasma-green.png);background-color:transparent}
+body[data-ball-style='plasma'] .ball[data-colour='blue']{background-image:url(art/ball-plasma-blue.png);background-color:transparent}
+body[data-ball-style='plasma'] .ball[data-colour='violet']{background-image:url(art/ball-plasma-violet.png);background-color:transparent}
+body[data-ball-style='plasma'] .ball[data-colour='pink']{background-image:url(art/ball-plasma-pink.png);background-color:transparent}
+body[data-ball-style='plasma'] .ball[data-colour='orange']{background-image:url(art/ball-plasma-orange.png);background-color:transparent}
+body[data-ball-style] .ball.wild{background:url(art/ball-wild.png) center/contain no-repeat;border:0;border-radius:50%;clip-path:none;box-shadow:none;position:relative}
+body[data-ball-style] .ball.wild::after{content:none}
+body[data-ball-style] .ball.bomb{background:url(art/ball-bomb.png) center/contain no-repeat;border:0;border-radius:50%;clip-path:none;box-shadow:none;position:relative;animation:none}
+body[data-ball-style] .ball.bomb::before,body[data-ball-style] .ball.bomb::after{content:none}
+body[data-ball-style] .ball.stone{background:url(art/ball-stone.png) center/contain no-repeat;border:0;border-radius:50%;clip-path:none;box-shadow:none}
+body[data-ball-style] .ball.route-ball{position:absolute}

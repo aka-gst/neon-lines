@@ -3,7 +3,7 @@
 // Raise this name when an asset is dropped from the shell: refreshed files
 // replace themselves, but entries for files that no longer ship only go away
 // when the old cache is discarded on activate.
-const CACHE = 'neon-lines-v20';
+const CACHE = 'neon-lines-v21';
 // Both games are served from this one origin and therefore share a single
 // CacheStorage. The cleanup on activate must only ever touch this game's own
 // caches: deleting everything else wipes the other game's offline copy.
@@ -25,10 +25,22 @@ const SHELL = [
   './og.jpg',
   './icon-maskable-512.png',
   './burst.png',
-  './lines-start-bg.webp',
-  './burst-g.webp',
-  './burst-h.webp',
-  './burst-i.webp'
+  /* Один набор шаров и особые фишки лежат в офлайн-копии; остальные три
+     набора и широкие фоны подтягиваются при первой встрече и оседают в
+     кэше сами — класть в оболочку восемь мегабайт ради выбора, который
+     сделает жребий, незачем. */
+  './art/ball-glass-red.png',
+  './art/ball-glass-yellow.png',
+  './art/ball-glass-green.png',
+  './art/ball-glass-blue.png',
+  './art/ball-glass-violet.png',
+  './art/ball-glass-pink.png',
+  './art/ball-glass-orange.png',
+  './art/ball-wild.png',
+  './art/ball-bomb.png',
+  './art/ball-stone.png',
+  './art/burst-j.png',
+  './art/burst-k.png',
 ];
 
 // Assets are versioned by a ?v= query, so the cache is keyed by path alone.
