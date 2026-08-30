@@ -96,6 +96,75 @@ function warmLooks(){
   setTimeout(next,1500);
 }
 
+/* ── Сцена для витрины ──────────────────────────────────────────────────
+   Карточка на сайте показывает не снимок, а петлю: «что происходит», а не
+   «как выглядит». Отсюда нужен вызов, который ставит одну и ту же сцену и
+   играет её.
+
+   Снимается ход бомбы: она едет через всё поле, оставляя за собой дорогу, и
+   сносит гроздь шаров. Статичный кадр этого не покажет в принципе — там видно
+   только разноцветные кружки.
+
+   Три вещи, без которых «детерминировано» было бы неправдой:
+   внешность закрепляется (иначе жребий каждый раз меняет вид шаров, поля и
+   фона), выброс новых шаров и подсказки выключаются на время сцены, размер
+   доски задаётся явно — в скрытой вкладке спросить его не у кого. */
+let showcasing=false;
+const SHOWCASE_LOOK={ballStyle:'plasma',boardStyle:'grid',backStyle:'void'};
+
+function scene(options={}){
+  const width=options.width||420;
+  showcasing=true;
+  muted=true;
+  hideTip();
+  document.querySelector('.overlay')?.remove();
+  Object.assign(document.body.dataset,SHOWCASE_LOOK);
+  boardEl.style.width=width+'px';
+  boardEl.style.setProperty('--size',String(SIZE));
+  started=true;gameOver=false;locked=false;selected=null;reachable=null;snapshot=null;
+  score=0;turns=0;lines=0;wildLife=0;wildBorn=0;born=new Set();clearing=new Set();
+  nextColors=[2,4,0];
+  board=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
+  /* Кольцо из восьми шаров вокруг пустой клетки (7,2) — туда и придёт бомба,
+     чтобы снести все восемь разом. Сама она в дальнем углу: дорога через всё
+     поле по диагонали, её и видно. Клетка назначения оставлена пустой
+     намеренно: занятая клетка — это «выбрать шар», а не «сходить туда», и
+     первая версия сцены на этом и встала. */
+  /* Снизу в кольце оставлена дверь (7,3): полностью обнесённая клетка
+     недостижима, и первая версия сцены упёрлась в «туда нет свободного
+     пути». Дверь всё равно попадает под взрыв. */
+  const ring=[[6,1,2],[7,1,4],[8,1,2],[6,2,0],[8,2,4],[6,3,1],[8,3,0]];
+  for(const[x,y,colour]of ring)board[y][x]=colour;
+  board[6][1]=BOMB;
+  /* Три шара для фона — в стороне от дороги, чтобы её не перегородить. */
+  board[8][1]=5;board[8][4]=6;board[4][3]=1;
+  messageEl.textContent='';
+  render();
+  return {width,cells:ring.length+4,target:[7,2]};
+}
+
+async function showcase(options={}){
+  scene(options);
+  const began=Date.now();
+  await wait(options.delay??380);
+  await handleCell(1,6);
+  await wait(options.pick??200);
+  await handleCell(7,2);
+  /* Момент ловится по признаку, а не по секундомеру: ждём, пока взрыв
+     действительно снимет шары. handleCell возвращается уже после взрыва, так
+     что это страховка на случай, если что-то останется в полёте. */
+  const until=Date.now()+4000;
+  while(Date.now()<until&&(locked||document.querySelector('.route-ball')))await wait(50);
+  await wait(options.tail??480);
+  showcasing=false;
+  /* Отдаём и намеренную длительность, и измеренную. Намеренная — то, на что
+     рассчитывать при съёмке; измеренная в скрытой вкладке врёт втрое, потому
+     что браузер душит там таймеры, и полагаться на неё нельзя. */
+  return {planned:2660,measured:Date.now()-began,cleared:8,
+    phases:{пауза:380,полёт:1150,посадка:220,взрыв:430,хвост:480}};
+}
+window.lines={scene,showcase,look:SHOWCASE_LOOK};
+
 function looksPanel(){
   document.querySelector('.looks')?.remove();
   const el=document.createElement('div');
@@ -153,7 +222,9 @@ const boardEl=document.querySelector('#board'),messageEl=document.querySelector(
 document.addEventListener('dblclick',event=>event.preventDefault(),{passive:false});
 let board,selected,nextColors,score,best,records,started=false,gameOver=false,locked=false,born=new Set(),clearing=new Set(),startedAt=0,leaderboardToken='',allScores=[],turns=0,nextWisdomAt=9;
 const WISDOM=['Не цепляйся за ход — смотри, что он открывает.','Спокойный ум замечает свободный путь.','Победа начинается с внимания к настоящему ходу.','Иногда лучший ход — сначала увидеть всё поле.','Отпусти неудачный ход и начни следующий чисто.','Терпение освобождает пространство для решения.'];
-let audio,muted=localStorage.getItem('neon-lines-muted')==='1';
+/* ?тихо — общее для всех игр соглашение: открыться немой. Нужно для съёмки
+   витрины и вообще везде, где звук неуместен. */
+let audio,muted=localStorage.getItem('neon-lines-muted')==='1'||new URLSearchParams(location.search).has('тихо');
 function resumeAudio(){if(audio?.state==='suspended')void audio.resume().catch(()=>{})}
 ['pointerdown','touchstart','keydown','pageshow'].forEach(type=>window.addEventListener(type,resumeAudio,{passive:true}));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)resumeAudio()});
@@ -288,6 +359,7 @@ const TIP_KEY='neon-lines-explained:';
 let tipTimer=0;
 function hideTip(){document.querySelector('.tip')?.remove();clearTimeout(tipTimer)}
 function showTip(kind,x,y){
+  if(showcasing)return;
   const known=TIPS[kind];
   if(!known)return;
   try{if(localStorage.getItem(TIP_KEY+kind))return;localStorage.setItem(TIP_KEY+kind,'1')}catch{}
@@ -305,7 +377,7 @@ function showTip(kind,x,y){
   tipTimer=setTimeout(hideTip,9000);
 }
 
-async function spawnBalls(){const free=freeCells(),created=[];let wildCame=false,landed=null;for(const color of nextColors){if(!free.length)break;const index=Math.floor(Math.random()*free.length),[x,y]=free.splice(index,1)[0];board[y][x]=color;created.push(id(x,y));if(isWild(color)){wildCame=true;wildLife=5+Math.floor(Math.random()*5);wildBorn=turns}if(color>=WILD)landed=[color,x,y]}nextColors=rollNext();born=new Set(created);sound.spawn();render();await wait(540);born=new Set();render();await removeMatches(matches());if(landed)showTip(landed[0],landed[1],landed[2]);return wildCame}
+async function spawnBalls(){if(showcasing)return false;const free=freeCells(),created=[];let wildCame=false,landed=null;for(const color of nextColors){if(!free.length)break;const index=Math.floor(Math.random()*free.length),[x,y]=free.splice(index,1)[0];board[y][x]=color;created.push(id(x,y));if(isWild(color)){wildCame=true;wildLife=5+Math.floor(Math.random()*5);wildBorn=turns}if(color>=WILD)landed=[color,x,y]}nextColors=rollNext();born=new Set(created);sound.spawn();render();await wait(540);born=new Set();render();await removeMatches(matches());if(landed)showTip(landed[0],landed[1],landed[2]);return wildCame}
 /* Куда шар вообще дойдёт. Считается один раз при выборе, а не на каждый
    наведённый курсор: восемьдесят одна клетка обходится за доли миллисекунды,
    но обходить их по разу на движение мыши незачем. Показываем не достижимое,
@@ -385,7 +457,7 @@ async function handleCell(x,y){
   const wild=wildAt();
   if(wild&&wildLeft()<=0){board[wild[1]][wild[0]]=null;wildLife=0;messageEl.textContent='Волшебный шар растаял.';sound.step(3)}
   else if(!wild)wildLife=0;
-  if(turns>=nextWisdomAt){messageEl.textContent=WISDOM[Math.floor(Math.random()*WISDOM.length)];nextWisdomAt=turns+8+Math.floor(Math.random()*6)}
+  if(!showcasing&&turns>=nextWisdomAt){messageEl.textContent=WISDOM[Math.floor(Math.random()*WISDOM.length)];nextWisdomAt=turns+8+Math.floor(Math.random()*6)}
   if(freeCells().length===0){gameOver=true;finishScore()}
   locked=false;render()}
 
