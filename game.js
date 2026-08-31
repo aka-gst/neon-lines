@@ -469,6 +469,10 @@ async function handleCell(x,y){
 function finishScore(){sound.over();quake(3);window.umami?.track('game-finish',{game:'neon-lines',score,duration_seconds:Math.round((Date.now()-startedAt)/1000)});void submitLeaderboard();records=[...records,score].sort((a,b)=>b-a).slice(0,5);best=Math.max(best,score);localStorage.setItem('neon-lines-records',JSON.stringify(records));localStorage.setItem('neon-lines-best',String(best))}
 function restart(){sound.start();rollBalls();startedAt=Date.now();void beginLeaderboard();window.umami?.track('game-start',{game:'neon-lines'});board=freshBoard();selected=null;reachable=null;snapshot=null;undoLeft=UNDO_TOTAL;wildLife=0;wildBorn=0;score=0;turns=0;lines=0;nextColors=rollNext();nextWisdomAt=8+Math.floor(Math.random()*5);started=true;gameOver=false;locked=false;born=new Set();board.forEach((row,y)=>row.forEach((value,x)=>{if(value!==null)born.add(id(x,y))}));messageEl.textContent='Собери пять одинаковых шаров.';render();warmLooks();setTimeout(()=>{born=new Set();render()},520);setTimeout(()=>startTour(false),900)}
 document.querySelector('#restart').onclick=()=>{if(started&&!gameOver&&!confirm('Начать новую игру? Текущий результат будет потерян.'))return;restart()};
+/* Выход на главную обрывает партию так же начисто, как «новая игра», только
+   молча и без кнопки подтверждения. Спрашиваем, если партия идёт. */
+document.querySelector('.game-home-menu')?.addEventListener('click',event=>{
+  if(started&&!gameOver&&!confirm('Выйти на главную? Текущий результат будет потерян.'))event.preventDefault()});
 const soundToggle=document.querySelector('#sound-toggle');
 function updateSoundButton(){soundToggle.textContent=`ЗВУК: ${muted?'ВЫКЛ':'ВКЛ'}`}
 soundToggle.onclick=()=>{muted=!muted;localStorage.setItem('neon-lines-muted',muted?'1':'0');updateSoundButton();if(!muted)tone(520,70,'square',.025)};
