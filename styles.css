@@ -237,6 +237,45 @@ body[data-ball-style] .ball.bomb{background:url(art/ball-bomb.png) center/contai
 body[data-ball-style] .ball.bomb::before,body[data-ball-style] .ball.bomb::after{content:none}
 body[data-ball-style] .ball.stone{background:url(art/ball-stone.png) center/contain no-repeat;border:0;border-radius:50%;clip-path:none;box-shadow:none;position:relative;animation:none}
 body[data-ball-style] .ball.stone::before,body[data-ball-style] .ball.stone::after{content:none}
+/* Блик.
+
+   Сергей просил «чтоб шарики как-то блестели иногда» — ключевое слово
+   «иногда». Постоянный блик на всех сразу даёт обратное: плоскую наклейку с
+   белым пятном. Поэтому пробег занимает десятую часть длинного цикла, а
+   соседям заданы разные сдвиги и разные периоды — семь на пять даёт
+   тридцать пять сочетаний, и они со временем расходятся, так что блеск
+   никогда не выстраивается в такт.
+
+   Объём даёт не столько блик, сколько тень: без неё шар лежит не на доске,
+   а в ней. Тень статическая, не анимируется.
+
+   Только обычные шары: у волшебного, бомбы и камня свои движения.
+   `:not(.route-ball)` держит летящий в стороне — правило ниже весит
+   столько же, и однажды такая пара уже сделала летящую бомбу невидимой. */
+body[data-ball-style] .ball[data-colour]:not(.route-ball){
+  position:relative;overflow:hidden;
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.62))}
+body[data-ball-style] .ball[data-colour]:not(.route-ball)::before{
+  content:'';position:absolute;inset:-40%;pointer-events:none;
+  background:linear-gradient(72deg,transparent 41%,rgba(255,255,255,.62) 47.5%,rgba(255,255,255,.1) 51.5%,transparent 57%);
+  transform:translateX(-130%);
+  animation:glint 9s linear infinite}
+@keyframes glint{0%,90%{transform:translateX(-130%)}97%,100%{transform:translateX(130%)}}
+body[data-ball-style] .cell:nth-child(7n+1) .ball[data-colour]:not(.route-ball)::before{animation-delay:-.4s}
+body[data-ball-style] .cell:nth-child(7n+2) .ball[data-colour]:not(.route-ball)::before{animation-delay:-1.7s}
+body[data-ball-style] .cell:nth-child(7n+3) .ball[data-colour]:not(.route-ball)::before{animation-delay:-3.1s}
+body[data-ball-style] .cell:nth-child(7n+4) .ball[data-colour]:not(.route-ball)::before{animation-delay:-4.6s}
+body[data-ball-style] .cell:nth-child(7n+5) .ball[data-colour]:not(.route-ball)::before{animation-delay:-5.9s}
+body[data-ball-style] .cell:nth-child(7n+6) .ball[data-colour]:not(.route-ball)::before{animation-delay:-7.2s}
+body[data-ball-style] .cell:nth-child(7n+7) .ball[data-colour]:not(.route-ball)::before{animation-delay:-8.5s}
+body[data-ball-style] .cell:nth-child(5n+1) .ball[data-colour]:not(.route-ball)::before{animation-duration:9s}
+body[data-ball-style] .cell:nth-child(5n+2) .ball[data-colour]:not(.route-ball)::before{animation-duration:10.4s}
+body[data-ball-style] .cell:nth-child(5n+3) .ball[data-colour]:not(.route-ball)::before{animation-duration:11.9s}
+body[data-ball-style] .cell:nth-child(5n+4) .ball[data-colour]:not(.route-ball)::before{animation-duration:13.1s}
+body[data-ball-style] .cell:nth-child(5n+5) .ball[data-colour]:not(.route-ball)::before{animation-duration:14.6s}
+@media(prefers-reduced-motion:reduce){
+  body[data-ball-style] .ball[data-colour]:not(.route-ball)::before{animation:none;opacity:0}
+}
 body[data-ball-style] .ball.route-ball{position:absolute}
 
 /* След особой фишки: клетки, через которые она прошла, горят, пока она летит.

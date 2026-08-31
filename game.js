@@ -56,13 +56,26 @@ const ballTag=index=>isWild(index)
    можно готовиться. Больше одной за раз не бывает — иначе ход перестаёт быть
    про цвета. Камни начинаются со второго этапа и держатся вдвоём, не больше:
    поле, засыпанное неподвижным, перестаёт быть решаемым. */
+/* Один-два за партию — это и есть механика: особый шар должен быть событием,
+   к которому успеваешь придумать, куда его девать. При прежних ставках их
+   выходило 8.8 за партию по замеру, и они читались как шары другого цвета.
+
+   Жалость не даёт партии остаться совсем без особого: без неё каждая десятая
+   была пустой, а невыпавшего для игрока не существует. Первый приходит рано,
+   чтобы объяснить себя, дальше редко. Замер на модели: в среднем 2.6 за
+   партию в пятьдесят ходов, медиана 2, пустых партий нет, первый к 11-му. */
+const WILD_RATE=.018,BOMB_RATE=.032,STONE_RATE=.05,FIRST_PITY=8,LATER_PITY=22;
+let dryTurns=0,specialsSeen=0;
 function rollNext(){
   const queue=Array.from({length:ballsPerTurn()},randomColor);
   const put=value=>{queue[Math.floor(Math.random()*queue.length)]=value};
-  const roll=Math.random();
-  if(!wildAt()&&roll<.13)put(WILD);
-  else if(countOf(BOMB)===0&&roll<.24)put(BOMB);
-  else if(stage()>=2&&countOf(STONE)<2&&roll<.34)put(STONE);
+  dryTurns+=1;
+  const roll=dryTurns>=(specialsSeen===0?FIRST_PITY:LATER_PITY)?0:Math.random();
+  let came=false;
+  if(!wildAt()&&roll<WILD_RATE){put(WILD);came=true}
+  else if(countOf(BOMB)===0&&roll<BOMB_RATE){put(BOMB);came=true}
+  else if(stage()>=2&&countOf(STONE)<2&&roll<STONE_RATE){put(STONE);came=true}
+  if(came){dryTurns=0;specialsSeen+=1}
   return queue}
 // Пошаговое обучение поверх настоящего интерфейса — общий файл с остальными
 // играми. Появляется один раз на устройство и по кнопке «как играть». Игра
@@ -111,10 +124,12 @@ function warmLooks(){
    доски задаётся явно — в скрытой вкладке спросить его не у кого. */
 let showcasing=false;
 const SHOWCASE_LOOK={ballStyle:'plasma',boardStyle:'grid',backStyle:'void'};
+const SHOWCASE_BURST='art/burst-j.png';
 
 function scene(options={}){
   const width=options.width||420;
   showcasing=true;
+  posedBurst=options.burst||SHOWCASE_BURST;pickBurst();
   muted=true;
   hideTip();
   document.querySelector('.overlay')?.remove();
@@ -163,7 +178,7 @@ async function showcase(options={}){
   return {planned:2660,measured:Date.now()-began,cleared:8,
     phases:{пауза:380,полёт:1150,посадка:220,взрыв:430,хвост:480}};
 }
-window.lines={scene,showcase,look:SHOWCASE_LOOK};
+window.lines={scene,showcase,look:SHOWCASE_LOOK,burst:SHOWCASE_BURST,release:()=>{posedBurst=null;showcasing=false}};
 
 function looksPanel(){
   document.querySelector('.looks')?.remove();
@@ -226,7 +241,7 @@ const WISDOM=['Не цепляйся за ход — смотри, что он �
    витрины и вообще везде, где звук неуместен. */
 let audio,muted=localStorage.getItem('neon-lines-muted')==='1'||new URLSearchParams(location.search).has('тихо');
 function resumeAudio(){if(audio?.state==='suspended')void audio.resume().catch(()=>{})}
-['pointerdown','touchstart','keydown','pageshow'].forEach(type=>window.addEventListener(type,resumeAudio,{passive:true}));
+['pointerdown','touchstart','keydown','pageshow'].forEach(type=>window.addEventListener(type,()=>{resumeAudio();if(typeof musicSync==='function')musicSync()},{passive:true}));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)resumeAudio()});
 const MOSCOW_OFFSET_MS=3*60*60*1000;
 // The leaderboard server cuts its "today" period at Moscow midnight, so the
@@ -244,11 +259,90 @@ const scoreRows=entries=>entries.length?entries.map((entry,index)=>`<p><span>${i
 // swallowed whole. On a failure the token is kept as well, so the next game
 // can try again.
 async function submitLeaderboard(){const dailyKey=`neon-lines-daily-best:${moscowDay()}`,dailyBest=Number(localStorage.getItem(dailyKey)||0);if(score<=0||score<=dailyBest||!leaderboardToken)return;const token=leaderboardToken;try{const nickname=await window.requestPlayerName();const response=await fetch('/api/leaderboard/scores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,nickname,score})});if(!response.ok)throw new Error(`сервер ответил ${response.status}`);localStorage.setItem(dailyKey,String(score));leaderboardToken='';await loadLeaderboard()}catch(error){console.warn('Результат не отправлен, попробуем со следующей партии',error)}}
-function tone(frequency,duration=70,type='square',volume=.035,delay=0){if(muted)return;const AudioEngine=window.AudioContext||window.webkitAudioContext;if(!AudioEngine)return;audio??=new AudioEngine();if(audio.state==='suspended')void audio.resume();const oscillator=audio.createOscillator(),gain=audio.createGain(),start=audio.currentTime+delay;oscillator.type=type;oscillator.frequency.setValueAtTime(frequency,start);gain.gain.setValueAtTime(volume,start);gain.gain.exponentialRampToValueAtTime(.0001,start+duration/1000);oscillator.connect(gain).connect(audio.destination);oscillator.start(start);oscillator.stop(start+duration/1000)}
+/* Общая шина. Раньше каждый звук шёл прямо в выход, и померить, что слышит
+   человек, было негде: офлайновый пик врёт до 6.7 дБ и меняет порядок звуков
+   по громкости. Теперь эффекты и музыка сходятся в один узел — на него и
+   вешается анализатор, и там же музыка держится ниже эффектов. */
+let busMaster,busEffects,busMusic,busProbe;
+function ensureAudio(){
+  const AudioEngine=window.AudioContext||window.webkitAudioContext;
+  if(!AudioEngine)return null;
+  if(!audio){
+    audio=new AudioEngine();
+    busMaster=audio.createGain();busMaster.gain.value=.9;busMaster.connect(audio.destination);
+    busEffects=audio.createGain();busEffects.gain.value=1;busEffects.connect(busMaster);
+    busMusic=audio.createGain();busMusic.gain.value=.3;busMusic.connect(busMaster);
+  }
+  if(audio.state==='suspended')void audio.resume();
+  return audio;
+}
+/* Анализатор на общем узле — единственная честная мерка громкости. */
+function probe(){
+  if(!ensureAudio())return null;
+  if(!busProbe){busProbe=audio.createAnalyser();busProbe.fftSize=2048;busMaster.connect(busProbe)}
+  return busProbe;
+}
+function tone(frequency,duration=70,type='square',volume=.035,delay=0){if(muted)return;if(!ensureAudio())return;const oscillator=audio.createOscillator(),gain=audio.createGain(),start=audio.currentTime+delay;oscillator.type=type;oscillator.frequency.setValueAtTime(frequency,start);gain.gain.setValueAtTime(volume,start);gain.gain.exponentialRampToValueAtTime(.0001,start+duration/1000);oscillator.connect(gain).connect(busEffects);oscillator.start(start);oscillator.stop(start+duration/1000)}
+/* Музыка.
+
+   Два слота с самого начала — меню и партия. Владелец различает их прямо:
+   «эта хорошо только в фоне для сюжета и меню», — а переделывать музыкальный
+   слой позже дороже, чем завести его сразу правильным.
+
+   Синтез, а не файл: игра размеренная, ей идёт петля, а не песня, и петля
+   ничего не весит и не зависит от чужой выкладки. Настоящий трек, если он
+   появится, ляжет сюда же вместо синтеза — слой это выдержит.
+
+   Громкость держится заведомо ниже эффектов и меряется живьём на общем узле:
+   жалоба «некоторые звуки оч громкие» была именно про то, что фон
+   перекрывает то, ради чего он играет. */
+const MUSIC={
+  /* Партия: неспешная пентатоника, ход игрока в неё умещается. */
+  game:{шаг:340,громкость:.028,
+    /* 0 — пауза; так дышит петля и не превращается в бубнёж. */
+    голос:[440,0,523.25,587.33,0,523.25,440,0,392,440,0,523.25,0,392,349.23,0,
+           440,0,523.25,587.33,0,659.25,587.33,0,523.25,440,0,392,0,440,0,0],
+    бас:[110,0,0,0,82.41,0,0,0,98,0,0,0,110,0,0,0]},
+  /* Меню: то же семейство нот, но реже и тише — фон, а не событие. */
+  menu:{шаг:520,громкость:.013,
+    голос:[440,0,0,392,0,0,349.23,0,0,392,0,0],
+    бас:[110,0,0,0,0,0,82.41,0,0,0,0,0]}
+};
+let musicTimer=0,musicStep=0,musicSlot=null;
+let musicMuted=localStorage.getItem('neon-lines-music')==='0';
+function musicVoice(frequency,duration,type,volume){
+  if(!frequency||!ensureAudio())return;
+  const o=audio.createOscillator(),g=audio.createGain(),now=audio.currentTime;
+  o.type=type;o.frequency.setValueAtTime(frequency,now);
+  g.gain.setValueAtTime(.0001,now);
+  g.gain.exponentialRampToValueAtTime(volume,now+.03);
+  g.gain.exponentialRampToValueAtTime(.0001,now+duration);
+  o.connect(g).connect(busMusic);
+  o.start(now);o.stop(now+duration+.03);
+}
+function musicPlay(slot){
+  if(musicSlot===slot)return;
+  musicStop();
+  if(musicMuted||muted||showcasing)return;
+  const песня=MUSIC[slot];
+  if(!песня||!ensureAudio())return;
+  musicSlot=slot;musicStep=0;
+  musicTimer=setInterval(()=>{
+    if(musicMuted||muted){musicStop();return}
+    const i=musicStep++;
+    musicVoice(песня.голос[i%песня.голос.length],песня.шаг/1000*.9,'triangle',песня.громкость);
+    musicVoice(песня.бас[i%песня.бас.length],песня.шаг/1000*1.6,'sine',песня.громкость*1.5);
+  },песня.шаг);
+}
+function musicStop(){clearInterval(musicTimer);musicTimer=0;musicSlot=null}
+/* Какой слот уместен прямо сейчас: заставка и конец партии — меню, игра — партия. */
+function musicWhere(){return showcasing?null:(started&&!gameOver?'game':'menu')}
+function musicSync(){const slot=musicWhere();if(!slot||musicMuted||muted)musicStop();else musicPlay(slot)}
+
 function haptic(pattern){try{navigator.vibrate?.(pattern)}catch{}}
 let quakeTimer=0;
 function quake(power){boardEl.style.setProperty('--quake',String(Math.min(3,Math.max(1,power))));boardEl.classList.remove('quake');void boardEl.offsetWidth;boardEl.classList.add('quake');clearTimeout(quakeTimer);quakeTimer=setTimeout(()=>boardEl.classList.remove('quake'),470)}
-const sound={select:()=>{haptic(8);tone(520,55,'square',.025)},step:index=>tone(280+index%4*35,65,'square',.018),spawn:()=>{haptic(15);[0,1,2].forEach(i=>tone(360+i*90,100,'triangle',.025,i*.07))},clear:()=>{haptic([20,28,38]);[0,1,2,3].forEach(i=>tone(740-i*110,130,'square',.035,i*.055))},start:()=>{haptic(18);[0,1,2].forEach(i=>tone(300+i*150,120,'triangle',.035,i*.08))},stage:()=>{haptic([18,30,18]);[0,1,2,3].forEach(i=>tone(300+i*130,150,'triangle',.03,i*.09))},over:()=>{haptic([55,40,75]);[0,1,2].forEach(i=>tone(330-i*75,220,'sawtooth',.025,i*.14))}};
+const sound={special:()=>{haptic([30,40,60]);[0,1,2,3,4].forEach(i=>tone(300+i*120,150,'triangle',.032,i*.085))},select:()=>{haptic(8);tone(520,55,'square',.025)},step:index=>tone(280+index%4*35,65,'square',.018),spawn:()=>{haptic(15);[0,1,2].forEach(i=>tone(360+i*90,100,'triangle',.025,i*.07))},clear:()=>{haptic([20,28,38]);[0,1,2,3].forEach(i=>tone(740-i*110,130,'square',.035,i*.055))},start:()=>{haptic(18);[0,1,2].forEach(i=>tone(300+i*150,120,'triangle',.035,i*.08))},stage:()=>{haptic([18,30,18]);[0,1,2,3].forEach(i=>tone(300+i*130,150,'triangle',.03,i*.09))},over:()=>{haptic([55,40,75]);[0,1,2].forEach(i=>tone(330-i*75,220,'sawtooth',.025,i*.14))}};
 const empty=()=>Array.from({length:SIZE},()=>Array(SIZE).fill(null));
 const id=(x,y)=>`${x}:${y}`;
 const randomColor=()=>Math.floor(Math.random()*COLORS.length);
@@ -316,7 +410,10 @@ async function animatePath(from,path,color){const source=boardEl.children[from[1
 // a stamp; drawing at random reads as an explosion. Relative paths keep them
 // resolving under /lines/.
 const BURSTS=['burst.png','art/burst-j.png','art/burst-k.png'];
-function pickBurst(){const file=BURSTS[Math.floor(Math.random()*BURSTS.length)];document.documentElement.style.setProperty('--burst',`url(${new URL(file,document.baseURI).href})`)}
+/* Витрина закрепляет картинку: их три, а взрыв за сцену случается дважды, и
+   разными кадрами дубли перестают совпадать. Пусто в обычной игре. */
+let posedBurst=null;
+function pickBurst(){const file=posedBurst||BURSTS[Math.floor(Math.random()*BURSTS.length)];document.documentElement.style.setProperty('--burst',`url(${new URL(file,document.baseURI).href})`)}
 /* Камень уходит, когда рядом что-нибудь сгорело: иначе он остался бы навсегда
    и поле медленно каменело. Это и есть ответ на вопрос «что с ним делать» —
    собрать линию рядом. */
@@ -345,7 +442,9 @@ async function removeMatches(found){if(!found.size)return false;sound.clear();pi
      собрать две пятёрки. Каждый шар сверх пятого теперь стоит вчетверо
      дороже прежнего, и строить наконец имеет смысл. Обычная пятёрка стоит
      ровно столько же, сколько стоила, — старые рекорды остаются сравнимы. */
-  const gained=50+(found.size-5)*40;score+=gained;clearing=new Set();render();messageEl.textContent=(usedWild?`Волшебный шар подошёл! +${gained}`:`Линия! +${gained}`)+(brokeStones?` Камней осыпалось: ${brokeStones}.`:'');if(nowStage>wasStage){while(nextColors.length<ballsPerTurn())nextColors.push(randomColor());sound.stage();quake(2);render();messageEl.textContent=`ЭТАП ${nowStage}. Теперь по ${ballsPerTurn()} ${ballWord(ballsPerTurn())} за ход.`}return true}
+  /* Волшебный шар, сгоревший в цепочке, доплачивает: иначе он просто затычка
+     под нехватку цвета, а не находка. */
+  const gained=50+(found.size-5)*40+(usedWild?100:0);score+=gained;clearing=new Set();render();messageEl.textContent=(usedWild?`Волшебный шар подошёл! +${gained}, из них 100 за него`:`Линия! +${gained}`)+(brokeStones?` Камней осыпалось: ${brokeStones}.`:'');if(nowStage>wasStage){while(nextColors.length<ballsPerTurn())nextColors.push(randomColor());sound.stage();quake(2);render();messageEl.textContent=`ЭТАП ${nowStage}. Теперь по ${ballsPerTurn()} ${ballWord(ballsPerTurn())} за ход.`}return true}
 /* Особые фишки появляются редко, и строка сообщений под полем для них слишком
    тихая: игрок видит новый предмет и не понимает, что это. Поэтому первый раз
    объяснение выезжает прямо к нему — с самой фишкой, нарисованной рядом.
@@ -355,14 +454,15 @@ const TIPS={
   [BOMB]:['БОМБА','Веди её куда хочешь: на месте она сносит всё вокруг себя. Единственное, что убирает камень без линии.'],
   [STONE]:['КАМЕНЬ','Не двигается и рвёт ряд. Осыплется, если рядом сгорит линия. Или взорви его бомбой.']
 };
-const TIP_KEY='neon-lines-explained:';
 let tipTimer=0;
 function hideTip(){document.querySelector('.tip')?.remove();clearTimeout(tipTimer)}
 function showTip(kind,x,y){
   if(showcasing)return;
   const known=TIPS[kind];
   if(!known)return;
-  try{if(localStorage.getItem(TIP_KEY+kind))return;localStorage.setItem(TIP_KEY+kind,'1')}catch{}
+  /* Раньше здесь стояла отметка «этот вид уже объясняли», и объяснение
+     тратилось на один взгляд за всю жизнь браузера. При одном-двух особых за
+     партию объяснять надо каждый раз: это не назойливость, это и есть подача. */
   hideTip();
   const el=document.createElement('div');
   el.className='tip';
@@ -377,12 +477,50 @@ function showTip(kind,x,y){
   tipTimer=setTimeout(hideTip,9000);
 }
 
-async function spawnBalls(){if(showcasing)return false;const free=freeCells(),created=[];let wildCame=false,landed=null;for(const color of nextColors){if(!free.length)break;const index=Math.floor(Math.random()*free.length),[x,y]=free.splice(index,1)[0];board[y][x]=color;created.push(id(x,y));if(isWild(color)){wildCame=true;wildLife=5+Math.floor(Math.random()*5);wildBorn=turns}if(color>=WILD)landed=[color,x,y]}nextColors=rollNext();born=new Set(created);sound.spawn();render();await wait(540);born=new Set();render();await removeMatches(matches());if(landed)showTip(landed[0],landed[1],landed[2]);return wildCame}
+async function spawnBalls(){if(showcasing)return false;const free=freeCells(),created=[];let wildCame=false,landed=null;for(const color of nextColors){if(!free.length)break;const index=Math.floor(Math.random()*free.length),[x,y]=free.splice(index,1)[0];board[y][x]=color;created.push(id(x,y));if(isWild(color)){wildCame=true;wildLife=5+Math.floor(Math.random()*5);wildBorn=turns}if(color>=WILD)landed=[color,x,y]}nextColors=rollNext();born=new Set(created);sound.spawn();if(landed)sound.special();render();await wait(540);born=new Set();render();await removeMatches(matches());if(landed)showTip(landed[0],landed[1],landed[2]);return wildCame}
 /* Куда шар вообще дойдёт. Считается один раз при выборе, а не на каждый
    наведённый курсор: восемьдесят одна клетка обходится за доли миллисекунды,
    но обходить их по разу на движение мыши незачем. Показываем не достижимое,
    а НЕдостижимое: обычно дойти можно почти везде, и подсветка «почти всего»
    была бы шумом, а вот запертый угол — ровно то, что игрок хочет знать. */
+/* Сохранение партии.
+
+   Партию убивает не «На главную», а телефон: звонок, переключение приложения,
+   случайное обновление страницы. Предупреждение на кнопке закрывает самый
+   редкий из входов, это закрывает частые.
+
+   Состояние берём шире, чем для отката: ещё и вид шаров. Вернувшийся человек
+   должен узнать свою игру, а не получить ту же партию в другой раскраске. */
+const SAVE_KEY='neon-lines-game';
+function saveGame(){
+  if(showcasing||!started||gameOver)return;
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify({v:1,board,score,nextColors,wildLife,wildBorn,lines,turns,undoLeft,nextWisdomAt,snapshot,dryTurns,specialsSeen,
+    playedMs:Date.now()-startedAt,
+    look:{ballStyle:document.body.dataset.ballStyle,boardStyle:document.body.dataset.boardStyle,backStyle:document.body.dataset.backStyle}}))}catch{}}
+function dropSave(){try{localStorage.removeItem(SAVE_KEY)}catch{}}
+/* Возвращает true, если партия поднята. Испорченную запись молча выбрасываем:
+   лучше новая игра, чем поле, на котором нельзя ходить. */
+function loadGame(){
+  let saved=null;
+  try{saved=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch{return false}
+  if(!saved||saved.v!==1)return false;
+  if(!Array.isArray(saved.board)||saved.board.length!==SIZE||saved.board.some(row=>!Array.isArray(row)||row.length!==SIZE)){dropSave();return false}
+  if(!Array.isArray(saved.nextColors)||!saved.nextColors.length){dropSave();return false}
+  if(saved.board.every(row=>row.every(cell=>cell===null))){dropSave();return false}
+  board=saved.board.map(row=>[...row]);
+  score=saved.score||0;nextColors=[...saved.nextColors];
+  wildLife=saved.wildLife||0;wildBorn=saved.wildBorn||0;
+  lines=saved.lines||0;turns=saved.turns||0;
+  undoLeft=typeof saved.undoLeft==='number'?saved.undoLeft:UNDO_TOTAL;
+  nextWisdomAt=saved.nextWisdomAt||turns+8;
+  dryTurns=saved.dryTurns||0;specialsSeen=saved.specialsSeen||0;
+  snapshot=saved.snapshot||null;
+  if(saved.look&&saved.look.ballStyle)Object.assign(document.body.dataset,saved.look);
+  /* Отсчёт продолжаем, а не начинаем заново: иначе в статистику уйдёт время
+     последнего куска вместо всей партии. */
+  startedAt=Date.now()-(saved.playedMs||0);
+  started=true;gameOver=false;locked=false;selected=null;reachable=null;born=new Set();clearing=new Set();
+  return true}
 function takeSnapshot(){snapshot={board:board.map(row=>[...row]),score,nextColors:[...nextColors],wildLife,wildBorn,lines,turns,message:messageEl.textContent}}
 function undoMove(){
   if(!started||gameOver||locked||!snapshot||undoLeft<=0)return;
@@ -459,14 +597,25 @@ async function handleCell(x,y){
   else if(!wild)wildLife=0;
   if(!showcasing&&turns>=nextWisdomAt){messageEl.textContent=WISDOM[Math.floor(Math.random()*WISDOM.length)];nextWisdomAt=turns+8+Math.floor(Math.random()*6)}
   if(freeCells().length===0){gameOver=true;finishScore()}
-  locked=false;render()}
+  locked=false;render();saveGame()}
 
-function finishScore(){sound.over();quake(3);window.umami?.track('game-finish',{game:'neon-lines',score,duration_seconds:Math.round((Date.now()-startedAt)/1000)});void submitLeaderboard();records=[...records,score].sort((a,b)=>b-a).slice(0,5);best=Math.max(best,score);localStorage.setItem('neon-lines-records',JSON.stringify(records));localStorage.setItem('neon-lines-best',String(best))}
-function restart(){sound.start();rollBalls();startedAt=Date.now();void beginLeaderboard();window.umami?.track('game-start',{game:'neon-lines'});board=freshBoard();selected=null;reachable=null;snapshot=null;undoLeft=UNDO_TOTAL;wildLife=0;wildBorn=0;score=0;turns=0;lines=0;nextColors=rollNext();nextWisdomAt=8+Math.floor(Math.random()*5);started=true;gameOver=false;locked=false;born=new Set();board.forEach((row,y)=>row.forEach((value,x)=>{if(value!==null)born.add(id(x,y))}));messageEl.textContent='Собери пять одинаковых шаров.';render();warmLooks();setTimeout(()=>{born=new Set();render()},520);setTimeout(()=>startTour(false),900)}
+function finishScore(){dropSave();sound.over();setTimeout(musicSync,900);quake(3);window.umami?.track('game-finish',{game:'neon-lines',score,duration_seconds:Math.round((Date.now()-startedAt)/1000)});void submitLeaderboard();records=[...records,score].sort((a,b)=>b-a).slice(0,5);best=Math.max(best,score);localStorage.setItem('neon-lines-records',JSON.stringify(records));localStorage.setItem('neon-lines-best',String(best))}
+function restart(){dropSave();dryTurns=0;specialsSeen=0;sound.start();rollBalls();startedAt=Date.now();void beginLeaderboard();window.umami?.track('game-start',{game:'neon-lines'});board=freshBoard();selected=null;reachable=null;snapshot=null;undoLeft=UNDO_TOTAL;wildLife=0;wildBorn=0;score=0;turns=0;lines=0;nextColors=rollNext();nextWisdomAt=8+Math.floor(Math.random()*5);started=true;gameOver=false;locked=false;born=new Set();board.forEach((row,y)=>row.forEach((value,x)=>{if(value!==null)born.add(id(x,y))}));messageEl.textContent='Собери пять одинаковых шаров.';render();warmLooks();setTimeout(()=>{born=new Set();render()},520);setTimeout(()=>startTour(false),900);musicSync()}
 document.querySelector('#restart').onclick=()=>{if(started&&!gameOver&&!confirm('Начать новую игру? Текущий результат будет потерян.'))return;restart()};
+/* Выход на главную обрывает партию так же начисто, как «новая игра», только
+   молча и без кнопки подтверждения. Спрашиваем, если партия идёт. */
+document.querySelector('.game-home-menu')?.addEventListener('click',event=>{
+  if(started&&!gameOver&&!confirm('Выйти на главную? Текущий результат будет потерян.'))event.preventDefault()});
 const soundToggle=document.querySelector('#sound-toggle');
 function updateSoundButton(){soundToggle.textContent=`ЗВУК: ${muted?'ВЫКЛ':'ВКЛ'}`}
-soundToggle.onclick=()=>{muted=!muted;localStorage.setItem('neon-lines-muted',muted?'1':'0');updateSoundButton();if(!muted)tone(520,70,'square',.025)};
+soundToggle.onclick=()=>{muted=!muted;localStorage.setItem('neon-lines-muted',muted?'1':'0');updateSoundButton();musicSync();if(!muted)tone(520,70,'square',.025)};
+/* Отдельная кнопка: без неё музыку не выключить, не убив заодно эффекты. */
+const musicToggle=document.createElement('button');
+musicToggle.id='music-toggle';musicToggle.className='action';
+function updateMusicButton(){musicToggle.textContent=`\u266b \u041c\u0423\u0417\u042b\u041a\u0410: ${musicMuted?'\u0412\u042b\u041a\u041b':'\u0412\u041a\u041b'}`}
+musicToggle.onclick=()=>{musicMuted=!musicMuted;localStorage.setItem('neon-lines-music',musicMuted?'0':'1');updateMusicButton();musicSync()};
+updateMusicButton();
+soundToggle.after(musicToggle);
 updateSoundButton();
 /* Обработчики кнопок вешаются здесь, на верхнем уровне. Раньше они по ошибке
    попали внутрь обработчика кнопки звука: «как играть» и «откат» оживали
@@ -482,6 +631,10 @@ if(new URLSearchParams(location.search).has('admin')){
 try{best=Number(localStorage.getItem('neon-lines-best')||0);records=JSON.parse(localStorage.getItem('neon-lines-records')||'[]')}catch{best=0;records=[]}
 pickBurst();rollBalls();
 boardEl.style.setProperty('--size',String(SIZE));
-board=freshBoard();wildLife=0;wildBorn=0;turns=0;lines=0;nextColors=rollNext();score=0;render();
+/* Подобранная партия важнее нарядной заставки: прерванного звонком человека
+   надо вернуть в его игру. Но сказать об этом вслух обязательно — молча
+   поставленное чужое поле читается как сбой, а не как забота. */
+if(loadGame()){void beginLeaderboard();messageEl.textContent=`Продолжаем прошлую партию. Счёт ${score}. «Новая игра» — начать заново.`;render()}
+else{board=freshBoard();wildLife=0;wildBorn=0;turns=0;lines=0;nextColors=rollNext();score=0;render()}
 void loadLeaderboard();
 if('serviceWorker' in navigator)void navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(()=>{});
