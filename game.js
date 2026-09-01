@@ -444,7 +444,7 @@ async function removeMatches(found){if(!found.size)return false;sound.clear();pi
      ровно столько же, сколько стоила, — старые рекорды остаются сравнимы. */
   /* Волшебный шар, сгоревший в цепочке, доплачивает: иначе он просто затычка
      под нехватку цвета, а не находка. */
-  const gained=50+(found.size-5)*40+(usedWild?100:0);score+=gained;clearing=new Set();render();messageEl.textContent=(usedWild?`Волшебный шар подошёл! +${gained}, из них 100 за него`:`Линия! +${gained}`)+(brokeStones?` Камней осыпалось: ${brokeStones}.`:'');if(nowStage>wasStage){while(nextColors.length<ballsPerTurn())nextColors.push(randomColor());sound.stage();quake(2);render();messageEl.textContent=`ЭТАП ${nowStage}. Теперь по ${ballsPerTurn()} ${ballWord(ballsPerTurn())} за ход.`}return true}
+  const gained=50+(found.size-5)*40+(usedWild?100:0);score+=gained;clearing=new Set();render();messageEl.textContent=(usedWild?`Волшебный шар подошёл! +${gained}, из них 100 за него`:`Линия! +${gained}`)+(brokeStones?` Камней осыпалось: ${brokeStones}.`:'');if(nowStage>wasStage){while(nextColors.length<ballsPerTurn())nextColors.push(randomColor());sound.stage();quake(2);render();messageEl.textContent=`ЭТАП ${nowStage}. Теперь по ${ballsPerTurn()} ${ballWord(ballsPerTurn())} за ход.`}saveGame();return true}
 /* Особые фишки появляются редко, и строка сообщений под полем для них слишком
    тихая: игрок видит новый предмет и не понимает, что это. Поэтому первый раз
    объяснение выезжает прямо к нему — с самой фишкой, нарисованной рядом.
@@ -477,7 +477,7 @@ function showTip(kind,x,y){
   tipTimer=setTimeout(hideTip,9000);
 }
 
-async function spawnBalls(){if(showcasing)return false;const free=freeCells(),created=[];let wildCame=false,landed=null;for(const color of nextColors){if(!free.length)break;const index=Math.floor(Math.random()*free.length),[x,y]=free.splice(index,1)[0];board[y][x]=color;created.push(id(x,y));if(isWild(color)){wildCame=true;wildLife=5+Math.floor(Math.random()*5);wildBorn=turns}if(color>=WILD)landed=[color,x,y]}nextColors=rollNext();born=new Set(created);sound.spawn();if(landed)sound.special();render();await wait(540);born=new Set();render();await removeMatches(matches());if(landed)showTip(landed[0],landed[1],landed[2]);return wildCame}
+async function spawnBalls(){if(showcasing)return false;const free=freeCells(),created=[];let wildCame=false,landed=null;for(const color of nextColors){if(!free.length)break;const index=Math.floor(Math.random()*free.length),[x,y]=free.splice(index,1)[0];board[y][x]=color;created.push(id(x,y));if(isWild(color)){wildCame=true;wildLife=5+Math.floor(Math.random()*5);wildBorn=turns}if(color>=WILD)landed=[color,x,y]}nextColors=rollNext();born=new Set(created);sound.spawn();if(landed)sound.special();render();saveGame();await wait(540);born=new Set();render();await removeMatches(matches());if(landed)showTip(landed[0],landed[1],landed[2]);saveGame();return wildCame}
 /* Куда шар вообще дойдёт. Считается один раз при выборе, а не на каждый
    наведённый курсор: восемьдесят одна клетка обходится за доли миллисекунды,
    но обходить их по разу на движение мыши незачем. Показываем не достижимое,
