@@ -6,24 +6,22 @@ html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none}body{min
 @keyframes quake{0%{transform:translate3d(0,0,0)}15%{transform:translate3d(calc(var(--quake,1)*-3px),calc(var(--quake,1)*2px),0) rotate(calc(var(--quake,1)*-.2deg))}33%{transform:translate3d(calc(var(--quake,1)*3px),calc(var(--quake,1)*-2px),0) rotate(calc(var(--quake,1)*.24deg))}52%{transform:translate3d(calc(var(--quake,1)*-2px),calc(var(--quake,1)*1px),0) rotate(calc(var(--quake,1)*-.13deg))}74%{transform:translate3d(calc(var(--quake,1)*1px),calc(var(--quake,1)*-1px),0)}100%{transform:translate3d(0,0,0)}}
 @keyframes board-flash{0%{opacity:0}14%{opacity:calc(var(--quake,1)*.17)}100%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.board.quake{animation:none}.board.quake::after{display:none}}
-.cell.clearing::after{content:'';position:absolute;z-index:4;inset:-75%;pointer-events:none;background:var(--burst) center/contain no-repeat;animation:burst-pop .46s cubic-bezier(.2,.8,.3,1) forwards}
-@keyframes burst-pop{0%{opacity:0;transform:scale(.3) rotate(-14deg)}22%{opacity:1;transform:scale(1.02) rotate(0)}100%{opacity:0;transform:scale(1.8) rotate(16deg)}}
-@media(prefers-reduced-motion:reduce){.cell.clearing::after{display:none}}
 
 /* 2026 cyber-noir visual unification with Tetcolor. */
 :root{--cream:#d5cadb;--panel:#101119;--cell:#0a0710;--cell-dark:#1a1226}
 body{background:repeating-linear-gradient(0deg,#87ffd514 0 1px,transparent 1px 4px),radial-gradient(circle at 50% 0,#10121c,#05050a 42%,#010104 78%)}
-.board{border:6px solid #585d6b;background:repeating-linear-gradient(0deg,#020205 0 3px,#05060a 3px 4px);box-shadow:inset 0 0 0 2px #151821,6px 6px 0 #000}
-.cell{border:1px solid #14101c;background:#0a0710;box-shadow:none}.cell:hover{background:#160f22}.cell.selected{outline-color:#00d9ff;filter:drop-shadow(0 0 7px #00d9ff)}
+.board{border:6px solid #74829b;background:repeating-linear-gradient(0deg,#050914 0 3px,#0a101d 3px 4px);box-shadow:inset 0 0 0 2px #27354e,0 0 22px #3c71a52e,6px 6px 0 #000}
+.cell{border:1px solid #334661;background:linear-gradient(145deg,#111a29,#09101d);box-shadow:inset 0 0 0 1px #18243a}.cell:hover{background:#16243a}.cell.selected{outline-color:#00d9ff;filter:drop-shadow(0 0 7px #00d9ff)}
 .meter,.preview,.records{border-color:#313442;background:linear-gradient(#101119,#050508)}
 .meter strong,.records b{color:#efff00}
 /* The same three buttons Tetcolor uses: gold for the action, cyan for the
    toggle beside it, acid green only for the one on the curtain. Three
    different button colours across two games read as two different games. */
 .action{border-color:#f4c542;background:#26210e;color:#ffe78d;box-shadow:3px 3px 0 #000}
-#sound-toggle{border-color:#00d9ff;background:#07191d;color:#83f1ff}
-#undo{grid-column:1/-1;border-color:#bd67e8;background:#150a1c;color:#d9a8f0}
-#how{grid-column:1/-1;border-color:#313442;background:#0b0c12;color:#9aa0ae}
+#sound-toggle,#music-toggle{border-color:#00d9ff;background:#07191d;color:#83f1ff}
+#undo{order:-1;grid-column:1/-1;min-height:54px;border-color:#bd67e8;background:#150a1c;color:#d9a8f0;font-size:11px}
+#restart,#sound-toggle,#music-toggle,#how{min-height:44px;padding:6px 5px;border-width:1px;font-size:8px;box-shadow:2px 2px 0 #000}
+#restart,#how{border-color:#46536b;background:#0d1320;color:#b9c4d8}
 .overlay button{border-color:#7dff00;background:#101606;color:#efff00;box-shadow:0 0 14px #7dff0055,3px 3px #000}
 .overlay{position:fixed;inset:0;z-index:80;justify-items:center;gap:20px;padding:clamp(24px,6vw,72px);border:0;background:radial-gradient(circle at 50% 18%,#181025,#05050a 55%,#010104);animation:curtain .48s cubic-bezier(.1,.8,.2,1)}
 .overlay > button{min-width:min(88vw,620px);min-height:clamp(88px,21vh,132px);font-size:clamp(30px,8vw,52px)}
@@ -118,10 +116,13 @@ body[data-ball-style] .ball.stone{
   box-shadow:inset 2px 2px 0 #5d616e,inset -3px -3px 0 #0d0e12;
 }
 
-/* Недостижимые клетки гаснут, как только шар взят: обычно дойти можно почти
-   везде, поэтому подсвечивать надо не «куда можно», а «куда нельзя». */
-.cell.blocked{background:#060409;box-shadow:inset 0 0 0 1px #0d0a14}
-.cell.blocked::after{content:'';position:absolute;inset:42%;border-radius:50%;background:#2a2233}
+/* После выбора видно не абстрактные точки, а ответ на вопрос «долетит?». У
+   доступной клетки тонкая мятная рамка, недоступная — заштрихованный барьер с
+   крестом. Это не меняет путь, только делает его читаемым без подсказки. */
+.cell.reachable{background:linear-gradient(145deg,#10232c,#0b1724);box-shadow:inset 0 0 0 1px #4ed9c277,0 0 8px #39bda22b}
+.cell.reachable::before{content:'';position:absolute;inset:21%;border:1px solid #6affda88;border-radius:3px;pointer-events:none}
+.cell.blocked{cursor:not-allowed;background:repeating-linear-gradient(-45deg,#100d18 0 4px,#23152c 4px 8px);border-color:#86517b;box-shadow:inset 0 0 0 1px #3b1f3d}
+.cell.blocked::after{content:'';position:absolute;inset:22%;border-radius:3px;background:linear-gradient(45deg,transparent 44%,#ff719e 45% 55%,transparent 56%),linear-gradient(-45deg,transparent 44%,#ff719e 45% 55%,transparent 56%);box-shadow:0 0 8px #ff719e66}
 /* Маршрут под курсором. Только на устройствах с настоящим курсором: на
    телефоне палец закрывает то, что подсветилось. */
 @media(hover:hover){.cell.route{background:#141026;box-shadow:inset 0 0 0 1px #3a2f5c}}
@@ -179,7 +180,7 @@ body[data-ball-style] .ball.route-ball{position:absolute}
 
 /* Виды поля. Сетка — как было; пустота убирает её вовсе; развёртка кладёт
    строчки ЭЛТ; плитка делает из клеток чуть приподнятые квадраты. */
-body[data-board-style='void'] .cell{border-color:transparent;box-shadow:none}
+body[data-board-style='void'] .cell{border-color:#334661;box-shadow:inset 0 0 0 1px #18243a}
 body[data-board-style='scan'] .board{background:repeating-linear-gradient(0deg,#03030a 0 2px,#08060f 2px 4px)}
 body[data-board-style='scan'] .cell{border-color:#100c1a}
 body[data-board-style='tile'] .cell{background:linear-gradient(158deg,#12101c,#08070e);box-shadow:inset 1px 1px 0 #201c30,inset -1px -1px 0 #05040a;border-color:#0b0912}
@@ -297,3 +298,25 @@ body[data-ball-style] .ball.route-ball{position:absolute}
 }
 @keyframes trail-in{from{opacity:0;transform:scale(.6)}}
 @media(prefers-reduced-motion:reduce){.cell.trail::before{animation:none}}
+
+/* Красный и розовый больше не отличаются одной температурой цвета: красный
+   шестигранный и с лучом, розовый — округлый четырёхлепестковый с кольцом.
+   Силуэт остаётся различимым и в сером, и на клетке около сорока пикселей. */
+body[data-ball-style] .ball[data-colour='red']{border-radius:0;clip-path:polygon(50% 1%,91% 25%,91% 75%,50% 99%,9% 75%,9% 25%)}
+body[data-ball-style] .ball[data-colour='red']::after{content:'';position:absolute;inset:17%;background:linear-gradient(90deg,transparent 43%,#fff9 47% 53%,transparent 57%);mix-blend-mode:screen;pointer-events:none}
+body[data-ball-style] .ball[data-colour='pink']{border-radius:34% 66% 34% 66%/66% 34% 66% 34%}
+body[data-ball-style] .ball[data-colour='pink']::after{content:'';position:absolute;inset:21%;border:2px solid #fff9;border-radius:50%;box-shadow:0 0 5px #ffb5d8;pointer-events:none}
+
+/* Обычная линия рассыпается на куски её же шаров. Бомба получает отдельную
+   оранжевую ударную волну в точке посадки — её нельзя принять за сбор линии. */
+.burst-particle{position:absolute;z-index:8;width:clamp(4px,3.4%,14px);aspect-ratio:1;pointer-events:none;border-radius:32% 68% 42% 58%;background:radial-gradient(circle at 32% 26%,#fff9 0 13%,var(--piece) 32%,color-mix(in srgb,var(--piece),#000 38%) 100%);box-shadow:0 0 7px var(--piece);transform:translate(-50%,-50%);animation:burst-shard .48s cubic-bezier(.14,.76,.28,1) forwards}
+@keyframes burst-shard{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}15%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) rotate(var(--spin)) scale(.18)}}
+.board.bomb-blast::before{content:'';position:absolute;z-index:7;left:var(--blast-x);top:var(--blast-y);width:18%;aspect-ratio:1;pointer-events:none;border:2px solid #ffd13a;border-radius:50%;box-shadow:0 0 18px #ff9138,0 0 40px #ef4356;background:radial-gradient(circle,#fff9 0 6%,#ff913899 14%,transparent 58%);animation:bomb-wave .46s ease-out forwards}
+@keyframes bomb-wave{from{opacity:1;transform:translate(-50%,-50%) scale(.25)}to{opacity:0;transform:translate(-50%,-50%) scale(3.8)}}
+@media(prefers-reduced-motion:reduce){.burst-particle{display:none}.board.bomb-blast::before{display:none}}
+
+/* Вариант поля не имеет права съесть язык доступности: эти три состояния
+   сильнее, чем сетка, пустота, развёртка или плитка. */
+body[data-board-style] .cell.reachable{background:linear-gradient(145deg,#10232c,#0b1724);border-color:#4ed9c2;box-shadow:inset 0 0 0 1px #6affda88,0 0 8px #39bda22b}
+body[data-board-style] .cell.blocked{background:repeating-linear-gradient(-45deg,#100d18 0 4px,#23152c 4px 8px);border-color:#86517b;box-shadow:inset 0 0 0 1px #3b1f3d}
+body[data-board-style] .cell.blocked::after{background:linear-gradient(45deg,transparent 44%,#ff719e 45% 55%,transparent 56%),linear-gradient(-45deg,transparent 44%,#ff719e 45% 55%,transparent 56%)}

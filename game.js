@@ -359,6 +359,39 @@ function musicSync(){const slot=musicWhere();if(!slot||musicMuted||muted)musicSt
 function haptic(pattern){try{navigator.vibrate?.(pattern)}catch{}}
 let quakeTimer=0;
 function quake(power){boardEl.style.setProperty('--quake',String(Math.min(3,Math.max(1,power))));boardEl.classList.remove('quake');void boardEl.offsetWidth;boardEl.classList.add('quake');clearTimeout(quakeTimer);quakeTimer=setTimeout(()=>boardEl.classList.remove('quake'),470)}
+function effectPower(count){return Math.min(3,Math.max(1,Math.ceil(count/4)))}
+function particleColour(value){return isBomb(value)?'#ff9138':isStone(value)?'#9aa2b3':isWild(value)?'#ffffff':COLORS[value]}
+/* У линии нет «картинки взрыва»: разлетаются куски тех шаров, которые игрок
+   только что собрал. Пять шаров дают двадцать пять осколков, крупная цепочка
+   сильнее, но потолок в 54 не позволяет забить телефон DOM-узлами. */
+function burstParticles(cells){
+  if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)return;
+  const sources=[...cells].map(cell=>{const[x,y]=cell.split(':').map(Number);return{x,y,value:board[y][x]}});
+  const pieces=Math.min(54,Math.max(12,sources.length*5));
+  for(let index=0;index<pieces;index++){
+    const source=sources[index%sources.length],particle=document.createElement('i');
+    const angle=Math.random()*Math.PI*2,distance=18+Math.random()*Math.min(62,20+sources.length*4);
+    particle.className='burst-particle';
+    particle.style.left=`${(source.x+.5)/SIZE*100}%`;
+    particle.style.top=`${(source.y+.5)/SIZE*100}%`;
+    particle.style.setProperty('--piece',particleColour(source.value));
+    particle.style.setProperty('--dx',`${Math.cos(angle)*distance}px`);
+    particle.style.setProperty('--dy',`${Math.sin(angle)*distance}px`);
+    particle.style.setProperty('--spin',`${Math.round(-180+Math.random()*360)}deg`);
+    particle.style.animationDelay=`${Math.round(Math.random()*55)}ms`;
+    particle.addEventListener('animationend',()=>particle.remove(),{once:true});
+    boardEl.append(particle);
+  }
+}
+let blastTimer=0;
+function startClear(cells,options={}){
+  clearing=cells;render();burstParticles(cells);quake(effectPower(cells.size));
+  if(!options.bomb)return;
+  boardEl.style.setProperty('--blast-x',`${(options.x+.5)/SIZE*100}%`);
+  boardEl.style.setProperty('--blast-y',`${(options.y+.5)/SIZE*100}%`);
+  boardEl.classList.remove('bomb-blast');void boardEl.offsetWidth;boardEl.classList.add('bomb-blast');
+  clearTimeout(blastTimer);blastTimer=setTimeout(()=>boardEl.classList.remove('bomb-blast'),470);
+}
 const sound={special:()=>{haptic([30,40,60]);[0,1,2,3,4].forEach(i=>tone(300+i*120,150,'triangle',.032,i*.085))},select:()=>{haptic(8);tone(520,55,'square',.025)},step:index=>tone(280+index%4*35,65,'square',.018),spawn:()=>{haptic(15);[0,1,2].forEach(i=>tone(360+i*90,100,'triangle',.025,i*.07))},clear:()=>{haptic([20,28,38]);[0,1,2,3].forEach(i=>tone(740-i*110,130,'square',.035,i*.055))},start:()=>{haptic(18);[0,1,2].forEach(i=>tone(300+i*150,120,'triangle',.035,i*.08))},stage:()=>{haptic([18,30,18]);[0,1,2,3].forEach(i=>tone(300+i*130,150,'triangle',.03,i*.09))},over:()=>{haptic([55,40,75]);[0,1,2].forEach(i=>tone(330-i*75,220,'sawtooth',.025,i*.14))}};
 const empty=()=>Array.from({length:SIZE},()=>Array(SIZE).fill(null));
 const id=(x,y)=>`${x}:${y}`;
@@ -388,7 +421,7 @@ function matches(){const result=new Set();
   }
   return result}
 function freeCells(){const out=[];board.forEach((row,y)=>row.forEach((value,x)=>{if(value===null)out.push([x,y])}));return out}
-function render(){boardEl.innerHTML='';for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++){const button=document.createElement('button');button.className=`cell ${selected?.[0]===x&&selected?.[1]===y?'selected':''} ${born.has(id(x,y))?'born':''} ${clearing.has(id(x,y))?'clearing':''} ${reachable&&board[y][x]===null&&!reachable.has(id(x,y))?'blocked':''}`;button.setAttribute('aria-label',board[y][x]===null?'Свободная клетка':'Шарик');button.onclick=()=>handleCell(x,y);if(board[y][x]!==null)button.innerHTML=ballTag(board[y][x]);boardEl.append(button)}scoreEl.textContent=String(score);bestEl.textContent=String(best);stageEl.textContent=`этап ${stage()}`;undoEl.textContent=`↶ ОТКАТ ${undoLeft} · −${UNDO_COST}`;undoEl.disabled=!snapshot||undoLeft<=0||locked||gameOver||!started;nextEl.innerHTML=nextColors.map(color=>ballTag(color)).join('');recordsEl.innerHTML=scoreRows(allScores);if(!started)overlay('start','НЕОН ЛИНИИ','Выстраивай пять шаров в линию','НАЧАТЬ',restart);else if(gameOver)overlay('over','ИГРА ОКОНЧЕНА',`Счёт: ${score}`,'ЕЩЁ РАЗ',restart);else document.querySelector('.overlay')?.remove()}
+function render(){boardEl.innerHTML='';for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++){const button=document.createElement('button');button.className=`cell ${selected?.[0]===x&&selected?.[1]===y?'selected':''} ${born.has(id(x,y))?'born':''} ${clearing.has(id(x,y))?'clearing':''} ${reachable&&board[y][x]===null&&reachable.has(id(x,y))?'reachable':''} ${reachable&&board[y][x]===null&&!reachable.has(id(x,y))?'blocked':''}`;button.setAttribute('aria-label',board[y][x]===null?'Свободная клетка':'Шарик');button.onclick=()=>handleCell(x,y);if(board[y][x]!==null)button.innerHTML=ballTag(board[y][x]);boardEl.append(button)}scoreEl.textContent=String(score);bestEl.textContent=String(best);stageEl.textContent=`этап ${stage()}`;undoEl.textContent=`↶ ОТКАТ ${undoLeft} · −${UNDO_COST}`;undoEl.disabled=!snapshot||undoLeft<=0||locked||gameOver||!started;nextEl.innerHTML=nextColors.map(color=>ballTag(color)).join('');recordsEl.innerHTML=scoreRows(allScores);if(!started)overlay('start','НЕОН ЛИНИИ','Выстраивай пять шаров в линию','НАЧАТЬ',restart);else if(gameOver)overlay('over','ИГРА ОКОНЧЕНА',`Счёт: ${score}`,'ЕЩЁ РАЗ',restart);else document.querySelector('.overlay')?.remove()}
 // The curtain lives on the body, not inside the board: it covers the whole
 // screen now and carries its own picture. Rebuilt only when the state behind
 // it changes, so the fade does not replay on every render.
@@ -448,14 +481,14 @@ async function explode(x,y){
   for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
     const nx=x+dx,ny=y+dy;
     if(board[ny]?.[nx]!==null&&board[ny]?.[nx]!==undefined)hit.add(id(nx,ny))}
-  sound.clear();pickBurst();clearing=hit;render();quake(3);await wait(430);
+  sound.clear();startClear(hit,{bomb:true,x,y});await wait(430);
   hit.forEach(cell=>{const[cx,cy]=cell.split(':').map(Number);board[cy][cx]=null});
   const gained=hit.size*5;score+=gained;
   clearing=new Set();render();
   messageEl.textContent=`Взрыв! Смело ${hit.size}, +${gained}`;
   return true}
 
-async function removeMatches(found){if(!found.size)return false;sound.clear();pickBurst();clearing=found;render();quake(Math.round(found.size/5));await wait(430);if(selected&&found.has(id(...selected)))selected=null;const usedWild=[...found].some(cell=>{const[x,y]=cell.split(':').map(Number);return isWild(board[y][x])});found.forEach(cell=>{const[x,y]=cell.split(':').map(Number);board[y][x]=null});if(usedWild)wildLife=0;const brokeStones=breakStones(found);const wasStage=stage();lines+=1;const nowStage=stage();/* Пять в ряд стоили 50, семь — 70: тянуть до семи было невыгодно, проще
+async function removeMatches(found){if(!found.size)return false;sound.clear();startClear(found);await wait(430);if(selected&&found.has(id(...selected)))selected=null;const usedWild=[...found].some(cell=>{const[x,y]=cell.split(':').map(Number);return isWild(board[y][x])});found.forEach(cell=>{const[x,y]=cell.split(':').map(Number);board[y][x]=null});if(usedWild)wildLife=0;const brokeStones=breakStones(found);const wasStage=stage();lines+=1;const nowStage=stage();/* Пять в ряд стоили 50, семь — 70: тянуть до семи было невыгодно, проще
      собрать две пятёрки. Каждый шар сверх пятого теперь стоит вчетверо
      дороже прежнего, и строить наконец имеет смысл. Обычная пятёрка стоит
      ровно столько же, сколько стоила, — старые рекорды остаются сравнимы. */
