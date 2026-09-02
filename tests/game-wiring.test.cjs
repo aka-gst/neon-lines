@@ -23,9 +23,9 @@ test('test-mode pages do not load the production Pulse script', () => {
 });
 
 test('a visual build changes both its asset URLs and offline cache name', () => {
-  assert.match(page, /styles\.css\?v=27/);
+  assert.match(page, /styles\.css\?v=28/);
   assert.match(page, /game\.js\?v=33/);
-  assert.match(worker, /neon-lines-v28/);
+  assert.match(worker, /neon-lines-v29/);
 });
 
 test('the exit is discoverable and names the cost of leaving an active game', () => {
@@ -69,4 +69,12 @@ test('line clears scatter capped ball-coloured particles and bombs keep a distin
   assert.match(styles, /\.burst-particle/);
   assert.match(styles, /\.board\.bomb-blast::before/);
   assert.match(styles, /prefers-reduced-motion:reduce\)\{\.burst-particle/);
+});
+
+test('short landscape keeps every 44px control in a compact two-column panel', () => {
+  assert.match(styles, /@media\(max-height:600px\) and \(orientation:landscape\)/);
+  assert.match(styles, /body \.sidebar-top\{grid-template-columns:1fr 1fr/);
+  assert.match(styles, /body \.sidebar-bottom\{grid-template-columns:1fr 1fr/);
+  assert.match(styles, /body \.sidebar-bottom \.records\{display:none/);
+  assert.match(styles, /body \.board\{height:min\(calc\(100dvh - 62px\)/);
 });
