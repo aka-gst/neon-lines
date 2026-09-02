@@ -252,9 +252,11 @@ const boardEl=document.querySelector('#board'),messageEl=document.querySelector(
 document.addEventListener('dblclick',event=>event.preventDefault(),{passive:false});
 let board,selected,nextColors,score,best,records,started=false,gameOver=false,locked=false,born=new Set(),clearing=new Set(),startedAt=0,leaderboardToken='',allScores=[],turns=0,nextWisdomAt=9;
 const WISDOM=['Не цепляйся за ход — смотри, что он открывает.','Спокойный ум замечает свободный путь.','Победа начинается с внимания к настоящему ходу.','Иногда лучший ход — сначала увидеть всё поле.','Отпусти неудачный ход и начни следующий чисто.','Терпение освобождает пространство для решения.'];
+const flow=window.LinesFlow||{firstTurnHint:()=>null,createTelemetry:()=>({track:()=>false,once:()=>false})};
+const telemetry=flow.createTelemetry({search:location.search,getUmami:()=>window.umami});
 /* ?тихо — общее для всех игр соглашение: открыться немой. Нужно для съёмки
    витрины и вообще везде, где звук неуместен. */
-let audio,muted=localStorage.getItem('neon-lines-muted')==='1'||new URLSearchParams(location.search).has('тихо');
+let audio,muted=localStorage.getItem('neon-lines-muted')==='1'||flow.quietFrom(location.search,location.hash);
 function resumeAudio(){if(audio?.state==='suspended')void audio.resume().catch(()=>{})}
 ['pointerdown','touchstart','keydown','pageshow'].forEach(type=>window.addEventListener(type,()=>{resumeAudio();if(typeof musicSync==='function')musicSync()},{passive:true}));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)resumeAudio()});
@@ -461,9 +463,8 @@ async function removeMatches(found){if(!found.size)return false;sound.clear();pi
      под нехватку цвета, а не находка. */
   const gained=50+(found.size-5)*40+(usedWild?100:0);score+=gained;clearing=new Set();render();messageEl.textContent=(usedWild?`Волшебный шар подошёл! +${gained}, из них 100 за него`:`Линия! +${gained}`)+(brokeStones?` Камней осыпалось: ${brokeStones}.`:'');if(nowStage>wasStage){while(nextColors.length<ballsPerTurn())nextColors.push(randomColor());sound.stage();quake(2);render();messageEl.textContent=`ЭТАП ${nowStage}. Теперь по ${ballsPerTurn()} ${ballWord(ballsPerTurn())} за ход.`}saveGame();return true}
 /* Особые фишки появляются редко, и строка сообщений под полем для них слишком
-   тихая: игрок видит новый предмет и не понимает, что это. Поэтому первый раз
-   объяснение выезжает прямо к нему — с самой фишкой, нарисованной рядом.
-   Один раз на устройство: дальше это уже знание, а не новость. */
+   тихая: игрок видит новый предмет и не понимает, что это. Поэтому объяснение
+   выезжает прямо к нему — с самой фишкой, нарисованной рядом, каждый раз. */
 const TIPS={
   [WILD]:['ВОЛШЕБНЫЙ ШАР','Подходит к любому цвету. Живёт несколько ходов и тает — последние два мигает.'],
   [BOMB]:['БОМБА','Веди её куда хочешь: на месте она сносит всё вокруг себя. Единственное, что убирает камень без линии.'],
@@ -492,7 +493,7 @@ function showTip(kind,x,y){
   tipTimer=setTimeout(hideTip,9000);
 }
 
-async function spawnBalls(){if(showcasing)return false;const free=freeCells(),created=[];let wildCame=false,landed=null;for(const color of nextColors){if(!free.length)break;const index=Math.floor(Math.random()*free.length),[x,y]=free.splice(index,1)[0];board[y][x]=color;created.push(id(x,y));if(isWild(color)){wildCame=true;wildLife=5+Math.floor(Math.random()*5);wildBorn=turns}if(color>=WILD)landed=[color,x,y]}nextColors=rollNext();born=new Set(created);sound.spawn();if(landed)sound.special();render();saveGame();await wait(540);born=new Set();render();await removeMatches(matches());if(landed)showTip(landed[0],landed[1],landed[2]);saveGame();return wildCame}
+async function spawnBalls(){if(showcasing)return false;const free=freeCells(),created=[];let wildCame=false,landed=null;for(const color of nextColors){if(!free.length)break;const index=Math.floor(Math.random()*free.length),[x,y]=free.splice(index,1)[0];board[y][x]=color;created.push(id(x,y));if(isWild(color)){wildCame=true;wildLife=5+Math.floor(Math.random()*5);wildBorn=turns}if(color>=WILD)landed=[color,x,y]}nextColors=rollNext();born=new Set(created);sound.spawn();if(landed){sound.special();telemetry.once('first-special')}render();saveGame();await wait(540);born=new Set();render();await removeMatches(matches());if(landed)showTip(landed[0],landed[1],landed[2]);saveGame();return wildCame}
 /* Куда шар вообще дойдёт. Считается один раз при выборе, а не на каждый
    наведённый курсор: восемьдесят одна клетка обходится за доли миллисекунды,
    но обходить их по разу на движение мыши незачем. Показываем не достижимое,
@@ -594,6 +595,7 @@ async function handleCell(x,y){
   if(!selected){messageEl.textContent='Сначала выбери шарик.';return}
   const path=findPath(selected,[x,y]);
   if(!path){messageEl.textContent='Туда нет свободного пути.';return}
+  const firstMove=turns===0;
   locked=true;clearRoute();
   takeSnapshot();
   const from=selected,color=board[from[1]][from[0]];
@@ -603,10 +605,15 @@ async function handleCell(x,y){
   board[from[1]][from[0]]=null;board[y][x]=color;render();
   /* Бомба срабатывает там, где встала: ход ею — это и есть её применение. */
   const blew=isBomb(color)?await explode(x,y):false;
-  const cleared=blew||await removeMatches(matches());
+  const matched=blew?false:await removeMatches(matches());
+  const cleared=blew||matched;
+  telemetry.once('first-move');
+  if(matched)telemetry.once('first-line');
   if(!cleared){const wildCame=await spawnBalls();
     messageEl.textContent=wildCame?'Особая фишка в очереди. Смотри, что придёт.':'Появились три новых шарика.'}
   turns+=1;
+  const hint=flow.firstTurnHint({firstMove,cleared});
+  if(hint)messageEl.textContent=hint;
   const wild=wildAt();
   if(wild&&wildLeft()<=0){board[wild[1]][wild[0]]=null;wildLife=0;messageEl.textContent='Волшебный шар растаял.';sound.step(3)}
   else if(!wild)wildLife=0;
@@ -614,13 +621,13 @@ async function handleCell(x,y){
   if(freeCells().length===0){gameOver=true;finishScore()}
   locked=false;render();saveGame()}
 
-function finishScore(){dropSave();sound.over();setTimeout(musicSync,900);quake(3);window.umami?.track('game-finish',{game:'neon-lines',score,duration_seconds:Math.round((Date.now()-startedAt)/1000)});void submitLeaderboard();records=[...records,score].sort((a,b)=>b-a).slice(0,5);best=Math.max(best,score);localStorage.setItem('neon-lines-records',JSON.stringify(records));localStorage.setItem('neon-lines-best',String(best))}
-function restart(){dropSave();dryTurns=0;specialsSeen=0;sound.start();rollBalls();startedAt=Date.now();void beginLeaderboard();window.umami?.track('game-start',{game:'neon-lines'});board=freshBoard();selected=null;reachable=null;snapshot=null;undoLeft=UNDO_TOTAL;wildLife=0;wildBorn=0;score=0;turns=0;lines=0;nextColors=rollNext();nextWisdomAt=8+Math.floor(Math.random()*5);started=true;gameOver=false;locked=false;born=new Set();board.forEach((row,y)=>row.forEach((value,x)=>{if(value!==null)born.add(id(x,y))}));messageEl.textContent='Собери пять одинаковых шаров.';render();warmLooks();setTimeout(()=>{born=new Set();render()},520);setTimeout(()=>startTour(false),900);musicSync()}
+function finishScore(){dropSave();sound.over();setTimeout(musicSync,900);quake(3);telemetry.track('game-finish',{game:'neon-lines',score,duration_seconds:Math.round((Date.now()-startedAt)/1000)});void submitLeaderboard();records=[...records,score].sort((a,b)=>b-a).slice(0,5);best=Math.max(best,score);localStorage.setItem('neon-lines-records',JSON.stringify(records));localStorage.setItem('neon-lines-best',String(best))}
+function restart(){dropSave();dryTurns=0;specialsSeen=0;sound.start();rollBalls();startedAt=Date.now();void beginLeaderboard();telemetry.track('game-start',{game:'neon-lines'});board=freshBoard();selected=null;reachable=null;snapshot=null;undoLeft=UNDO_TOTAL;wildLife=0;wildBorn=0;score=0;turns=0;lines=0;nextColors=rollNext();nextWisdomAt=8+Math.floor(Math.random()*5);started=true;gameOver=false;locked=false;born=new Set();board.forEach((row,y)=>row.forEach((value,x)=>{if(value!==null)born.add(id(x,y))}));messageEl.textContent='Собери пять одинаковых шаров.';render();warmLooks();setTimeout(()=>{born=new Set();render()},520);setTimeout(()=>startTour(false),900);musicSync()}
 document.querySelector('#restart').onclick=()=>{if(started&&!gameOver&&!confirm('Начать новую игру? Текущий результат будет потерян.'))return;restart()};
 /* Выход на главную обрывает партию так же начисто, как «новая игра», только
    молча и без кнопки подтверждения. Спрашиваем, если партия идёт. */
 document.querySelector('.game-home-menu')?.addEventListener('click',event=>{
-  if(started&&!gameOver&&!confirm('Выйти на главную? Текущий результат будет потерян.'))event.preventDefault()});
+  if(started&&!gameOver&&!confirm('Выйти на сайт? Прогресс может не сохраниться.'))event.preventDefault()});
 const soundToggle=document.querySelector('#sound-toggle');
 function updateSoundButton(){soundToggle.textContent=`ЗВУК: ${muted?'ВЫКЛ':'ВКЛ'}`}
 soundToggle.onclick=()=>{muted=!muted;localStorage.setItem('neon-lines-muted',muted?'1':'0');updateSoundButton();musicSync();if(!muted)tone(520,70,'square',.025)};
@@ -649,7 +656,7 @@ boardEl.style.setProperty('--size',String(SIZE));
 /* Подобранная партия важнее нарядной заставки: прерванного звонком человека
    надо вернуть в его игру. Но сказать об этом вслух обязательно — молча
    поставленное чужое поле читается как сбой, а не как забота. */
-if(loadGame()){void beginLeaderboard();messageEl.textContent=`Продолжаем прошлую партию. Счёт ${score}. «Новая игра» — начать заново.`;render()}
+if(loadGame()){void beginLeaderboard();telemetry.once('game-resume');messageEl.textContent=`Продолжаем прошлую партию. Счёт ${score}. «Новая игра» — начать заново.`;render()}
 else{board=freshBoard();wildLife=0;wildBorn=0;turns=0;lines=0;nextColors=rollNext();score=0;render()}
 void loadLeaderboard();
 if('serviceWorker' in navigator)void navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(()=>{});
