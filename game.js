@@ -229,7 +229,9 @@ function startTour(force){if(!window.Tour)return;if(force)window.Tour.start(TOUR
    выбирается в панели по ?admin: снял галочку — этот вариант больше не придёт.
    Пустой список значит «всё разрешено», иначе один снятый крестик оставил бы
    игру без внешности вообще. */
-const BALL_STYLES=[['glass','СТЕКЛО'],['core','ЯДРО'],['crystal','КРИСТАЛЛ'],['plasma','ПЛАЗМА']];
+// Production pool is intentionally curated: the older 'core' spheres remain in art/
+// for reference, but the richer glass/crystal/plasma sets define the shipped look.
+const BALL_STYLES=[['glass','СТЕКЛО'],['crystal','КРИСТАЛЛ'],['plasma','ПЛАЗМА']];
 const COLOR_NAMES=['red','yellow','green','blue','violet','pink','orange'];
 const BOARD_STYLES=[['grid','СЕТКА'],['void','ПУСТОТА'],['scan','РАЗВЁРТКА'],['tile','ПЛИТКА']];
 const BACK_STYLES=[['void','ЧЁРНЫЙ'],['violet','ФИОЛЕТ'],['ember','УГЛИ'],['ice','ЛЁД']];
@@ -384,6 +386,20 @@ function burstParticles(cells){
   }
 }
 let blastTimer=0;
+function scorePop(cells,text){
+  if(!cells||!cells.size)return;
+  const pts=[...cells].map(cell=>cell.split(':').map(Number));
+  const x=pts.reduce((n,p)=>n+p[0]+.5,0)/pts.length;
+  const y=pts.reduce((n,p)=>n+p[1]+.5,0)/pts.length;
+  const el=document.createElement('div');
+  el.className='score-pop';
+  el.textContent=text;
+  el.style.setProperty('--x',String(x));
+  el.style.setProperty('--y',String(y));
+  boardEl.append(el);
+  el.addEventListener('animationend',()=>el.remove(),{once:true});
+}
+
 function startClear(cells,options={}){
   clearing=cells;render();burstParticles(cells);quake(effectPower(cells.size));
   if(!options.bomb)return;
@@ -483,7 +499,7 @@ async function explode(x,y){
     if(board[ny]?.[nx]!==null&&board[ny]?.[nx]!==undefined)hit.add(id(nx,ny))}
   sound.clear();startClear(hit,{bomb:true,x,y});await wait(430);
   hit.forEach(cell=>{const[cx,cy]=cell.split(':').map(Number);board[cy][cx]=null});
-  const gained=hit.size*5;score+=gained;
+  const gained=hit.size*5;score+=gained;scorePop(hit,`+${gained}`);
   clearing=new Set();render();
   messageEl.textContent=`Взрыв! Смело ${hit.size}, +${gained}`;
   return true}
@@ -494,7 +510,7 @@ async function removeMatches(found){if(!found.size)return false;sound.clear();st
      ровно столько же, сколько стоила, — старые рекорды остаются сравнимы. */
   /* Волшебный шар, сгоревший в цепочке, доплачивает: иначе он просто затычка
      под нехватку цвета, а не находка. */
-  const gained=50+(found.size-5)*40+(usedWild?100:0);score+=gained;clearing=new Set();render();messageEl.textContent=(usedWild?`Волшебный шар подошёл! +${gained}, из них 100 за него`:`Линия! +${gained}`)+(brokeStones?` Камней осыпалось: ${brokeStones}.`:'');if(nowStage>wasStage){while(nextColors.length<ballsPerTurn())nextColors.push(randomColor());sound.stage();quake(2);render();messageEl.textContent=`ЭТАП ${nowStage}. Теперь по ${ballsPerTurn()} ${ballWord(ballsPerTurn())} за ход.`}saveGame();return true}
+  const gained=50+(found.size-5)*40+(usedWild?100:0);score+=gained;scorePop(found,found.size>=7?`ДЛИННАЯ ЛИНИЯ · +${gained}`:`+${gained}`);clearing=new Set();render();messageEl.textContent=(usedWild?`Волшебный шар подошёл! +${gained}, из них 100 за него`:`Линия! +${gained}`)+(brokeStones?` Камней осыпалось: ${brokeStones}.`:'');if(nowStage>wasStage){while(nextColors.length<ballsPerTurn())nextColors.push(randomColor());sound.stage();quake(2);render();messageEl.textContent=`ЭТАП ${nowStage}. Теперь по ${ballsPerTurn()} ${ballWord(ballsPerTurn())} за ход.`}saveGame();return true}
 /* Особые фишки появляются редко, и строка сообщений под полем для них слишком
    тихая: игрок видит новый предмет и не понимает, что это. Поэтому объяснение
    выезжает прямо к нему — с самой фишкой, нарисованной рядом, каждый раз. */

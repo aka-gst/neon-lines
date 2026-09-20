@@ -3,7 +3,7 @@
 // Raise this name when an asset is dropped from the shell: refreshed files
 // replace themselves, but entries for files that no longer ship only go away
 // when the old cache is discarded on activate.
-const CACHE = 'neon-lines-v29';
+const CACHE = 'neon-lines-v30';
 // Both games are served from this one origin and therefore share a single
 // CacheStorage. The cleanup on activate must only ever touch this game's own
 // caches: deleting everything else wipes the other game's offline copy.
@@ -25,7 +25,7 @@ const SHELL = [
   './og.jpg',
   './icon-maskable-512.png',
   './burst.png',
-  /* Один набор шаров и особые фишки лежат в офлайн-копии; остальные три
+  /* Один набор шаров и особые фишки лежат в офлайн-копии; остальные два
      набора и широкие фоны подтягиваются при первой встрече и оседают в
      кэше сами — класть в оболочку восемь мегабайт ради выбора, который
      сделает жребий, незачем. */

@@ -11,7 +11,7 @@ const worker = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 
 test('the game loads the flow helper before game.js', () => {
   const helper = page.indexOf('src="flow.js?v=2"');
-  const gameScript = page.indexOf('src="game.js?v=33"');
+  const gameScript = page.indexOf('src="game.js?v=34"');
   assert.ok(helper >= 0, 'index must load flow.js');
   assert.ok(helper < gameScript, 'flow.js must load before game.js');
 });
@@ -24,8 +24,8 @@ test('test-mode pages do not load the production Pulse script', () => {
 
 test('a visual build changes both its asset URLs and offline cache name', () => {
   assert.match(page, /styles\.css\?v=28/);
-  assert.match(page, /game\.js\?v=33/);
-  assert.match(worker, /neon-lines-v29/);
+  assert.match(page, /game\.js\?v=34/);
+  assert.match(worker, /neon-lines-v30/);
 });
 
 test('the exit is discoverable and names the cost of leaving an active game', () => {
