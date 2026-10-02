@@ -25,8 +25,19 @@ DEST="${DEST:-bonita:/opt/zakriva/caddy/site/lines/}"
 SITE="${SITE:-https://aka-gst.ru/lines}"
 
 # Белый список. Добавил файл в игру — впиши сюда, иначе он не уедет.
-FILES="index.html game.js styles.css android.css sw.js manifest.webmanifest
+FILES="index.html game.js flow.js styles.css android.css sw.js manifest.webmanifest
        favicon.svg burst.png og.jpg icon-192.png icon-512.png icon-maskable-512.png art"
+
+# Сторож: каждый свой файл, который страница подключает, обязан быть в белом списке.
+# 02.10.2026 так нашли flow.js: index.html его звал, список его не знал — на бою 404,
+# «Новая игра» не работала ни у кого, пока проверка по бою смотрела только пять файлов.
+for ref in $(grep -oE '(src|href)="[^"#:]+"' index.html | sed -E 's/.*="([^"?]+).*/\1/' | grep -v '^/'); do
+  top="${ref%%/*}"
+  case " $(echo $FILES | tr '\n' ' ') " in
+    *" $ref "*|*" $top "*) ;;
+    *) echo "  index.html подключает $ref, а в белом списке его нет — впиши в FILES"; exit 2 ;;
+  esac
+done
 
 LIST=""
 for f in $FILES; do
@@ -48,7 +59,7 @@ done
 
 echo "== сверка по бою =="
 bad=0; seen=0
-for f in index.html game.js styles.css sw.js art/ball-core-red.png; do
+for f in index.html game.js flow.js styles.css sw.js art/ball-core-red.png; do
   seen=$((seen + 1))
   a=$(shasum -a 256 "$f" | cut -c1-12)
   b=$(curl -s --retry 3 --retry-all-errors --max-time 40 -o /tmp/vyl.$$ "$SITE/$f?svezho=$(date +%s)" \
