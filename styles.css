@@ -116,16 +116,16 @@ body[data-ball-style] .ball.stone{
   box-shadow:inset 2px 2px 0 #5d616e,inset -3px -3px 0 #0d0e12;
 }
 
-/* После выбора видно не абстрактные точки, а ответ на вопрос «долетит?». У
-   доступной клетки тонкая мятная рамка, недоступная — заштрихованный барьер с
-   крестом. Это не меняет путь, только делает его читаемым без подсказки. */
-.cell.reachable{background:linear-gradient(145deg,#10232c,#0b1724);box-shadow:inset 0 0 0 1px #4ed9c277,0 0 8px #39bda22b}
-.cell.reachable::before{content:'';position:absolute;inset:21%;border:1px solid #6affda88;border-radius:3px;pointer-events:none}
-.cell.blocked{cursor:not-allowed;background:repeating-linear-gradient(-45deg,#100d18 0 4px,#23152c 4px 8px);border-color:#86517b;box-shadow:inset 0 0 0 1px #3b1f3d}
-.cell.blocked::after{content:'';position:absolute;inset:22%;border-radius:3px;background:linear-gradient(45deg,transparent 44%,#ff719e 45% 55%,transparent 56%),linear-gradient(-45deg,transparent 44%,#ff719e 45% 55%,transparent 56%);box-shadow:0 0 8px #ff719e66}
-/* Маршрут под курсором. Только на устройствах с настоящим курсором: на
-   телефоне палец закрывает то, что подсветилось. */
-@media(hover:hover){.cell.route{background:#141026;box-shadow:inset 0 0 0 1px #3a2f5c}}
+/* Указатель пути — и только он. Сергей, 3.10.2026: «когда появляется вариант
+   передвинуть шарик, только стрелочка до нового поля появляется, и всё».
+   До этого на выборе шара вся доска получала разметку «долетит / не долетит»
+   (мятная рамка на каждой доступной клетке, штриховка с красным крестом на
+   каждой недоступной) и теряла её на приземлении — это и мигало на каждом
+   ходу. Маршрут показывается под курсором, пока выбираешь клетку, и на любом
+   устройстве — пока шар летит по нему. Точка в центре клетки — цвет выбора,
+   чтобы читалось «куда идёт выбранный». */
+.cell.route{background:#141026;box-shadow:inset 0 0 0 1px #3a2f5c}
+.cell.route::before{content:'';position:absolute;inset:40%;border-radius:50%;background:#00d9ff66;box-shadow:0 0 6px #00d9ff55;pointer-events:none}
 
 
 /* Кнопка занавеса тоже должна отвечать курсору. */
@@ -315,11 +315,9 @@ body[data-ball-style] .ball[data-colour='pink']::after{content:'';position:absol
 @keyframes bomb-wave{from{opacity:1;transform:translate(-50%,-50%) scale(.25)}to{opacity:0;transform:translate(-50%,-50%) scale(3.8)}}
 @media(prefers-reduced-motion:reduce){.burst-particle{display:none}.board.bomb-blast::before{display:none}}
 
-/* Вариант поля не имеет права съесть язык доступности: эти три состояния
-   сильнее, чем сетка, пустота, развёртка или плитка. */
-body[data-board-style] .cell.reachable{background:linear-gradient(145deg,#10232c,#0b1724);border-color:#4ed9c2;box-shadow:inset 0 0 0 1px #6affda88,0 0 8px #39bda22b}
-body[data-board-style] .cell.blocked{background:repeating-linear-gradient(-45deg,#100d18 0 4px,#23152c 4px 8px);border-color:#86517b;box-shadow:inset 0 0 0 1px #3b1f3d}
-body[data-board-style] .cell.blocked::after{background:linear-gradient(45deg,transparent 44%,#ff719e 45% 55%,transparent 56%),linear-gradient(-45deg,transparent 44%,#ff719e 45% 55%,transparent 56%)}
+/* Вариант поля не имеет права съесть указатель пути: маршрут сильнее, чем
+   сетка, пустота, развёртка или плитка. */
+body[data-board-style] .cell.route{background:#141026;box-shadow:inset 0 0 0 1px #3a2f5c}
 
 /* В горизонтали узкое место — высота, не ширина. После обязательных 44px
    вторичных кнопок и 54px отката правая колонка не имеет права расти вниз:

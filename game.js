@@ -24,7 +24,7 @@ let wildLife=0,wildBorn=0;
    превращает игру в перебор вариантов; платный оставляет её игрой, но снимает
    боль от промаха мимо клетки — а на телефоне промахиваются часто. */
 const UNDO_TOTAL=5,UNDO_COST=50;
-let undoLeft=UNDO_TOTAL,snapshot=null,reachable=null;
+let undoLeft=UNDO_TOTAL,snapshot=null;
 /* У партии не было развития: двадцатый ход не отличался от второго. Теперь
    каждые восемь собранных линий поднимают этап, а с ним — сколько шаров
    выбрасывается за ход. Первые два этапа идут по три, как раньше, так что
@@ -136,7 +136,7 @@ function scene(options={}){
   Object.assign(document.body.dataset,SHOWCASE_LOOK);
   boardEl.style.width=width+'px';
   boardEl.style.setProperty('--size',String(SIZE));
-  started=true;gameOver=false;locked=false;selected=null;reachable=null;snapshot=null;
+  started=true;gameOver=false;locked=false;selected=null;snapshot=null;
   score=0;turns=0;lines=0;wildLife=0;wildBorn=0;born=new Set();clearing=new Set();
   nextColors=[2,4,0];
   board=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
@@ -437,7 +437,7 @@ function matches(){const result=new Set();
   }
   return result}
 function freeCells(){const out=[];board.forEach((row,y)=>row.forEach((value,x)=>{if(value===null)out.push([x,y])}));return out}
-function render(){boardEl.innerHTML='';for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++){const button=document.createElement('button');button.className=`cell ${selected?.[0]===x&&selected?.[1]===y?'selected':''} ${born.has(id(x,y))?'born':''} ${clearing.has(id(x,y))?'clearing':''} ${reachable&&board[y][x]===null&&reachable.has(id(x,y))?'reachable':''} ${reachable&&board[y][x]===null&&!reachable.has(id(x,y))?'blocked':''}`;button.setAttribute('aria-label',board[y][x]===null?'Свободная клетка':'Шарик');button.onclick=()=>handleCell(x,y);if(board[y][x]!==null)button.innerHTML=ballTag(board[y][x]);boardEl.append(button)}scoreEl.textContent=String(score);bestEl.textContent=String(best);stageEl.textContent=`этап ${stage()}`;undoEl.textContent=`↶ ОТКАТ ${undoLeft} · −${UNDO_COST}`;undoEl.disabled=!snapshot||undoLeft<=0||locked||gameOver||!started;nextEl.innerHTML=nextColors.map(color=>ballTag(color)).join('');recordsEl.innerHTML=scoreRows(allScores);if(!started)overlay('start','НЕОН ЛИНИИ','Выстраивай пять шаров в линию','НАЧАТЬ',restart);else if(gameOver)overlay('over','ИГРА ОКОНЧЕНА',`Счёт: ${score}`,'ЕЩЁ РАЗ',restart);else document.querySelector('.overlay')?.remove()}
+function render(){boardEl.innerHTML='';for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++){const button=document.createElement('button');button.className=`cell ${selected?.[0]===x&&selected?.[1]===y?'selected':''} ${born.has(id(x,y))?'born':''} ${clearing.has(id(x,y))?'clearing':''}`;button.setAttribute('aria-label',board[y][x]===null?'Свободная клетка':'Шарик');button.onclick=()=>handleCell(x,y);if(board[y][x]!==null)button.innerHTML=ballTag(board[y][x]);boardEl.append(button)}scoreEl.textContent=String(score);bestEl.textContent=String(best);stageEl.textContent=`этап ${stage()}`;undoEl.textContent=`↶ ОТКАТ ${undoLeft} · −${UNDO_COST}`;undoEl.disabled=!snapshot||undoLeft<=0||locked||gameOver||!started;nextEl.innerHTML=nextColors.map(color=>ballTag(color)).join('');recordsEl.innerHTML=scoreRows(allScores);if(!started)overlay('start','НЕОН ЛИНИИ','Выстраивай пять шаров в линию','НАЧАТЬ',restart);else if(gameOver)overlay('over','ИГРА ОКОНЧЕНА',`Счёт: ${score}`,'ЕЩЁ РАЗ',restart);else document.querySelector('.overlay')?.remove()}
 // The curtain lives on the body, not inside the board: it covers the whole
 // screen now and carries its own picture. Rebuilt only when the state behind
 // it changes, so the fade does not replay on every render.
@@ -461,6 +461,13 @@ async function animatePath(from,path,color){const source=boardEl.children[from[1
      И перед самым взрывом — пауза, чтобы взгляд успел приземлиться там же,
      где она. */
   const step=special?115:62;
+  /* Указатель пути: клетки маршрута помечены на время полёта — это и есть
+     «стрелочка до нового поля» (Сергей, 3.10.2026). До этого на выборе шара
+     вспыхивала разметка всей доски — на сцене витрины 34 мятных рамки и 7
+     красных крестов «сюда не долететь» — и гасла на приземлении: мигание на
+     каждом ходу. Теперь на выборе меняется только сам шар. */
+  const routeCells=path.map(([x,y])=>boardEl.children[y*SIZE+x]).filter(Boolean);
+  routeCells.forEach(cell=>cell.classList.add('route'));
   const trail=[];
   for(let index=0;index<path.length;index++){
     const[x,y]=path[index];
@@ -471,6 +478,7 @@ async function animatePath(from,path,color){const source=boardEl.children[from[1
   }
   await wait(special?220:72);
   trail.forEach(cell=>cell.classList.remove('trail'));
+  routeCells.forEach(cell=>cell.classList.remove('route'));
   ball.remove()}
 // Four drawings for the same moment. One burst repeated on every line reads as
 // a stamp; drawing at random reads as an explosion. Relative paths keep them
@@ -584,7 +592,7 @@ function loadGame(){
   /* Отсчёт продолжаем, а не начинаем заново: иначе в статистику уйдёт время
      последнего куска вместо всей партии. */
   startedAt=Date.now()-(saved.playedMs||0);
-  started=true;gameOver=false;locked=false;selected=null;reachable=null;born=new Set();clearing=new Set();
+  started=true;gameOver=false;locked=false;selected=null;born=new Set();clearing=new Set();
   return true}
 function takeSnapshot(){snapshot={board:board.map(row=>[...row]),score,nextColors:[...nextColors],wildLife,wildBorn,lines,turns,message:messageEl.textContent}}
 function undoMove(){
@@ -593,18 +601,10 @@ function undoMove(){
   nextColors=[...snapshot.nextColors];
   wildLife=snapshot.wildLife;wildBorn=snapshot.wildBorn;lines=snapshot.lines;turns=snapshot.turns;
   score=Math.max(0,snapshot.score-UNDO_COST);
-  snapshot=null;undoLeft-=1;selected=null;reachable=null;born=new Set();clearing=new Set();
+  snapshot=null;undoLeft-=1;selected=null;born=new Set();clearing=new Set();
   sound.select();
   messageEl.textContent=`Ход отменён, −${UNDO_COST}. Осталось откатов: ${undoLeft}.`;
   render()}
-
-function reachableFrom(from){
-  const seen=new Set([id(...from)]),queue=[from];
-  for(let i=0;i<queue.length;i++){const[x,y]=queue[i];
-    for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,key=id(nx,ny);
-      if(nx<0||ny<0||nx>=SIZE||ny>=SIZE||seen.has(key)||board[ny][nx]!==null)continue;
-      seen.add(key);queue.push([nx,ny])}}
-  return seen}
 
 /* Маршрут под курсором рисуется прямо по клеткам, без перерисовки доски:
    перерисовка на каждое движение мыши стоила бы дороже самого поиска. */
@@ -637,7 +637,7 @@ async function handleCell(x,y){
     if(isStone(board[y][x])){messageEl.textContent='Камень не сдвинуть. Собери линию рядом.';return}
     const target=boardEl.children[y*SIZE+x];
     if(target?.classList.contains('ghost'))return;
-    sound.select();selected=[x,y];reachable=reachableFrom(selected);clearRoute();
+    sound.select();selected=[x,y];clearRoute();
     messageEl.textContent=clearing.has(id(x,y))?'Этот шар сейчас сгорает.':'Шарик выбран.';
     render();return}
   if(locked)return;
@@ -648,7 +648,7 @@ async function handleCell(x,y){
   locked=true;clearRoute();
   takeSnapshot();
   const from=selected,color=board[from[1]][from[0]];
-  selected=null;reachable=null;
+  selected=null;
   messageEl.textContent='Шарик прыгает по найденному пути…';
   await animatePath(from,path,color);
   board[from[1]][from[0]]=null;board[y][x]=color;render();
@@ -671,7 +671,7 @@ async function handleCell(x,y){
   locked=false;render();saveGame()}
 
 function finishScore(){dropSave();sound.over();setTimeout(musicSync,900);quake(3);telemetry.track('game-finish',{game:'neon-lines',score,duration_seconds:Math.round((Date.now()-startedAt)/1000)});void submitLeaderboard();records=[...records,score].sort((a,b)=>b-a).slice(0,5);best=Math.max(best,score);localStorage.setItem('neon-lines-records',JSON.stringify(records));localStorage.setItem('neon-lines-best',String(best))}
-function restart(){dropSave();dryTurns=0;specialsSeen=0;sound.start();rollBalls();startedAt=Date.now();void beginLeaderboard();telemetry.track('game-start',{game:'neon-lines'});board=freshBoard();selected=null;reachable=null;snapshot=null;undoLeft=UNDO_TOTAL;wildLife=0;wildBorn=0;score=0;turns=0;lines=0;nextColors=rollNext();nextWisdomAt=8+Math.floor(Math.random()*5);started=true;gameOver=false;locked=false;born=new Set();board.forEach((row,y)=>row.forEach((value,x)=>{if(value!==null)born.add(id(x,y))}));messageEl.textContent='Собери пять одинаковых шаров.';render();warmLooks();setTimeout(()=>{born=new Set();render()},520);setTimeout(()=>startTour(false),900);musicSync()}
+function restart(){dropSave();dryTurns=0;specialsSeen=0;sound.start();rollBalls();startedAt=Date.now();void beginLeaderboard();telemetry.track('game-start',{game:'neon-lines'});board=freshBoard();selected=null;snapshot=null;undoLeft=UNDO_TOTAL;wildLife=0;wildBorn=0;score=0;turns=0;lines=0;nextColors=rollNext();nextWisdomAt=8+Math.floor(Math.random()*5);started=true;gameOver=false;locked=false;born=new Set();board.forEach((row,y)=>row.forEach((value,x)=>{if(value!==null)born.add(id(x,y))}));messageEl.textContent='Собери пять одинаковых шаров.';render();warmLooks();setTimeout(()=>{born=new Set();render()},520);setTimeout(()=>startTour(false),900);musicSync()}
 document.querySelector('#restart').onclick=()=>{if(started&&!gameOver&&!confirm('Начать новую игру? Текущий результат будет потерян.'))return;restart()};
 /* Выход на главную обрывает партию так же начисто, как «новая игра», только
    молча и без кнопки подтверждения. Спрашиваем, если партия идёт. */

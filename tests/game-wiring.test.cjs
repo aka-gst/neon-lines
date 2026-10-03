@@ -11,7 +11,7 @@ const worker = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 
 test('the game loads the flow helper before game.js', () => {
   const helper = page.indexOf('src="flow.js?v=2"');
-  const gameScript = page.indexOf('src="game.js?v=34"');
+  const gameScript = page.indexOf('src="game.js?v=35"');
   assert.ok(helper >= 0, 'index must load flow.js');
   assert.ok(helper < gameScript, 'flow.js must load before game.js');
 });
@@ -23,9 +23,9 @@ test('test-mode pages do not load the production Pulse script', () => {
 });
 
 test('a visual build changes both its asset URLs and offline cache name', () => {
-  assert.match(page, /styles\.css\?v=28/);
-  assert.match(page, /game\.js\?v=34/);
-  assert.match(worker, /neon-lines-v30/);
+  assert.match(page, /styles\.css\?v=29/);
+  assert.match(page, /game\.js\?v=35/);
+  assert.match(worker, /neon-lines-v31/);
 });
 
 test('the exit is discoverable and names the cost of leaving an active game', () => {
@@ -44,12 +44,20 @@ test('the real move path tracks milestones and keeps the first line result', () 
   assert.match(game, /if\(hint\)messageEl\.textContent=hint/);
 });
 
-test('a selected ball distinguishes an open destination from an unreachable barrier', () => {
-  assert.match(game, /reachable\.has\(id\(x,y\)\)\?'reachable':''/);
-  assert.match(styles, /\.cell\.reachable/);
-  assert.match(styles, /\.cell\.blocked::after/);
-  assert.match(styles, /linear-gradient\(45deg/);
-  assert.doesNotMatch(styles, /\.cell\.blocked::after\{content:'';position:absolute;inset:42%;border-radius:50%;background:#2a2233/);
+/* Сергей, 3.10.2026: на выборе шара — только указатель до нового поля, без
+   разметки всей доски. Прежняя версия красила 34 доступных клетки мятной рамкой
+   и 7 недоступных красным крестом и снимала всё на приземлении — мигало на
+   каждом ходу. Сторож: разметки нет ни в коде, ни в стилях; маршрут помечается
+   на время полёта и виден не только под курсором. */
+test('selecting a ball marks only the ball; the route is the only pointer, shown while the ball flies', () => {
+  assert.doesNotMatch(game, /'reachable'|'blocked'|reachableFrom/);
+  assert.doesNotMatch(styles, /\.cell\.(reachable|blocked)/);
+  assert.match(game, /routeCells\.forEach\(cell=>cell\.classList\.add\('route'\)\)/);
+  assert.match(game, /routeCells\.forEach\(cell=>cell\.classList\.remove\('route'\)\)/);
+  assert.match(styles, /\n\.cell\.route\{/);
+  assert.match(styles, /\.cell\.route::before\{/);
+  assert.match(styles, /body\[data-board-style\] \.cell\.route\{/);
+  assert.doesNotMatch(styles, /@media\(hover:hover\)\{\.cell\.route/);
 });
 
 test('red and pink have non-colour marks, while sound and music share one toggle treatment', () => {
