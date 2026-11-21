@@ -687,13 +687,16 @@ function updateMusicButton(){musicToggle.textContent=`\u266b \u041c\u0423\u0417\
 musicToggle.onclick=()=>{musicMuted=!musicMuted;localStorage.setItem('neon-lines-music',musicMuted?'0':'1');updateMusicButton();musicSync()};
 updateMusicButton();
 soundToggle.after(musicToggle);
-/* Муха-соперник (страница /muha/): при ?fly этим полем ходит мозг мухи — теми же тапами, с теми же анимациями.
+/* Муха-соперник (страница /muha/): при ?fly этим полем ходит мозг мухи — теми же тапами, с теми же анимациями;
+   перед ходом видно, что она выбрала: шар выделен, путь к цели подсвечен (как у игрока при наведении).
    Её партия не трогает сохранение, рекорды, лидерборд и счётчик игрока. Без ?fly блок не выполняется. */
 if(new URLSearchParams(location.search).has('fly')){
   saveGame=dropSave=()=>{};loadGame=()=>false;beginLeaderboard=submitLeaderboard=async()=>{};startTour=()=>{};
   telemetry.track=telemetry.once=()=>{};finishScore=()=>{sound.over();quake(3);setTimeout(musicSync,900)};
   window.__flyLines={state:()=>({board:board.map(row=>[...row]),nextColors:[...nextColors],score,lines,turns,wildLife,wildBorn,started,gameOver,locked}),
-    start:()=>restart(),move:async(from,to)=>{await handleCell(from[0],from[1]);await wait(250);await handleCell(to[0],to[1])}};
+    start:()=>restart(),move:async(from,to)=>{await handleCell(from[0],from[1]);hoverKey='';showRoute(to[0],to[1]);await wait(650);await handleCell(to[0],to[1])}};
+  /* выход у страницы поединка один — своя «НА САЙТ» во фрейме скрыта */
+  document.head.insertAdjacentHTML('beforeend','<style>.game-home-menu,.home-menu{display:none!important}</style>');
 }
 
 updateSoundButton();
