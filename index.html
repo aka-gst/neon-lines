@@ -28,7 +28,8 @@
   <script defer src="/player-name.js?v=3"></script>
   <script defer src="/tour.js?v=1"></script>
   <script>
-    if(!new URLSearchParams(location.search).has('test')){
+    /* ?test — проверка, ?fly — партия внутри поединка /muha/poedinok/: счётчик не грузится (свои события считает страница поединка). */
+    if(!new URLSearchParams(location.search).has('test')&&!new URLSearchParams(location.search).has('fly')){
       document.write('<script defer src="/pulse/script.js" data-website-id="de024048-c4c3-4639-bbdf-808c558f6d71"><\/script>');
     }
   </script>
