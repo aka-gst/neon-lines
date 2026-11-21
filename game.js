@@ -1,6 +1,15 @@
 /* Поле девять на девять и только: размеры пробовались, но в общую таблицу
    всё равно шёл один из них, а остальные оставались игрой в стороне. */
 const SIZE=9;
+/* Поединок с мухой (/muha/, ?fly&seed=…): случайность ПРАВИЛ — стартовая доска, очередь шаров, особые шары,
+   куда лягут новые — идёт от зерна. У человека и мухи одни и те же расклады, а сервер-судья лидерборда
+   переигрывает партию по журналу ходов. Без зерна rnd — это Math.random, как всегда, и порядок вызовов тот же.
+   Украшения (частицы, мудрости, вид шаров) берут Math.random всегда. */
+const RULE_SEED=(()=>{const q=new URLSearchParams(location.search),v=q.get('seed')||'';return q.has('fly')&&/^\d{1,10}$/.test(v)?Number(v)>>>0:null})();
+/* Поток зерна начинается заново с каждой партией (reseedRules в restart поединка): доска заставки до «Начать» его не съедает. */
+let ruleA=RULE_SEED;
+const reseedRules=()=>{ruleA=RULE_SEED};
+const rnd=RULE_SEED===null?()=>Math.random():()=>{ruleA=ruleA+0x6D2B79F5|0;let t=Math.imul(ruleA^ruleA>>>15,1|ruleA);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
 const startBalls=()=>5;
 const COLORS=['#ef4356','#ffd13a','#42d574','#42aef5','#bd67e8','#ff70ad','#ff9138'];
 // Same order as COLORS. Written into the element's own style attribute so the
@@ -68,9 +77,9 @@ const WILD_RATE=.018,BOMB_RATE=.032,STONE_RATE=.05,FIRST_PITY=8,LATER_PITY=22;
 let dryTurns=0,specialsSeen=0;
 function rollNext(){
   const queue=Array.from({length:ballsPerTurn()},randomColor);
-  const put=value=>{queue[Math.floor(Math.random()*queue.length)]=value};
+  const put=value=>{queue[Math.floor(rnd()*queue.length)]=value};
   dryTurns+=1;
-  const roll=dryTurns>=(specialsSeen===0?FIRST_PITY:LATER_PITY)?0:Math.random();
+  const roll=dryTurns>=(specialsSeen===0?FIRST_PITY:LATER_PITY)?0:rnd();
   let came=false;
   if(!wildAt()&&roll<WILD_RATE){put(WILD);came=true}
   else if(countOf(BOMB)===0&&roll<BOMB_RATE){put(BOMB);came=true}
@@ -411,9 +420,9 @@ function startClear(cells,options={}){
 const sound={special:()=>{haptic([30,40,60]);[0,1,2,3,4].forEach(i=>tone(300+i*120,150,'triangle',.032,i*.085))},select:()=>{haptic(8);tone(520,55,'square',.025)},step:index=>tone(280+index%4*35,65,'square',.018),spawn:()=>{haptic(15);[0,1,2].forEach(i=>tone(360+i*90,100,'triangle',.025,i*.07))},clear:()=>{haptic([20,28,38]);[0,1,2,3].forEach(i=>tone(740-i*110,130,'square',.035,i*.055))},start:()=>{haptic(18);[0,1,2].forEach(i=>tone(300+i*150,120,'triangle',.035,i*.08))},stage:()=>{haptic([18,30,18]);[0,1,2,3].forEach(i=>tone(300+i*130,150,'triangle',.03,i*.09))},over:()=>{haptic([55,40,75]);[0,1,2].forEach(i=>tone(330-i*75,220,'sawtooth',.025,i*.14))}};
 const empty=()=>Array.from({length:SIZE},()=>Array(SIZE).fill(null));
 const id=(x,y)=>`${x}:${y}`;
-const randomColor=()=>Math.floor(Math.random()*COLORS.length);
+const randomColor=()=>Math.floor(rnd()*COLORS.length);
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-function freshBoard(){const value=empty();for(let i=0;i<startBalls();i++){let x,y;do{x=Math.floor(Math.random()*SIZE);y=Math.floor(Math.random()*SIZE)}while(value[y][x]!==null);value[y][x]=randomColor()}return value}
+function freshBoard(){const value=empty();for(let i=0;i<startBalls();i++){let x,y;do{x=Math.floor(rnd()*SIZE);y=Math.floor(rnd()*SIZE)}while(value[y][x]!==null);value[y][x]=randomColor()}return value}
 function findPath(from,to){const queue=[from],seen=new Set([id(...from)]),parent=new Map();for(let i=0;i<queue.length;i++){const[x,y]=queue[i];if(x===to[0]&&y===to[1]){const path=[];let cursor=id(...to);while(cursor!==id(...from)){const parts=cursor.split(':').map(Number);path.push(parts);cursor=parent.get(cursor)}return path.reverse()}for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,key=id(nx,ny);if(nx<0||ny<0||nx>=SIZE||ny>=SIZE||seen.has(key)||board[ny][nx]!==null)continue;seen.add(key);parent.set(key,id(x,y));queue.push([nx,ny])}}return null}
 // Волшебный шар подходит к любому цвету, поэтому «одинаковость» ряда больше не
 // проверить сравнением с соседом: цвет ряда задаёт первый не-волшебный шар в
@@ -550,7 +559,7 @@ function showTip(kind,x,y){
   tipTimer=setTimeout(hideTip,9000);
 }
 
-async function spawnBalls(){if(showcasing)return false;const free=freeCells(),created=[];let wildCame=false,landed=null;for(const color of nextColors){if(!free.length)break;const index=Math.floor(Math.random()*free.length),[x,y]=free.splice(index,1)[0];board[y][x]=color;created.push(id(x,y));if(isWild(color)){wildCame=true;wildLife=5+Math.floor(Math.random()*5);wildBorn=turns}if(color>=WILD)landed=[color,x,y]}nextColors=rollNext();born=new Set(created);sound.spawn();if(landed){sound.special();telemetry.once('first-special')}render();saveGame();await wait(540);born=new Set();render();await removeMatches(matches());if(landed)showTip(landed[0],landed[1],landed[2]);saveGame();return wildCame}
+async function spawnBalls(){if(showcasing)return false;const free=freeCells(),created=[];let wildCame=false,landed=null;for(const color of nextColors){if(!free.length)break;const index=Math.floor(rnd()*free.length),[x,y]=free.splice(index,1)[0];board[y][x]=color;created.push(id(x,y));if(isWild(color)){wildCame=true;wildLife=5+Math.floor(rnd()*5);wildBorn=turns}if(color>=WILD)landed=[color,x,y]}nextColors=rollNext();born=new Set(created);sound.spawn();if(landed){sound.special();telemetry.once('first-special')}render();saveGame();await wait(540);born=new Set();render();await removeMatches(matches());if(landed)showTip(landed[0],landed[1],landed[2]);saveGame();return wildCame}
 /* Куда шар вообще дойдёт. Считается один раз при выборе, а не на каждый
    наведённый курсор: восемьдесят одна клетка обходится за доли миллисекунды,
    но обходить их по разу на движение мыши незачем. Показываем не достижимое,
@@ -693,7 +702,14 @@ soundToggle.after(musicToggle);
 if(new URLSearchParams(location.search).has('fly')){
   saveGame=dropSave=()=>{};loadGame=()=>false;beginLeaderboard=submitLeaderboard=async()=>{};startTour=()=>{};
   telemetry.track=telemetry.once=()=>{};finishScore=()=>{sound.over();quake(3);setTimeout(musicSync,900)};
+  /* Журнал ходов для судьи: [x1,y1,x2,y2] — сделанный ход, ['u'] — откат. Пишется только при зерне. */
+  const LOG=[];
+  if(RULE_SEED!==null){const realHandle=handleCell,realUndo=undoMove,realRestart=restart;
+    restart=()=>{reseedRules();LOG.length=0;realRestart()};
+    handleCell=async(x,y)=>{const from=selected?[...selected]:null,before=turns;await realHandle(x,y);if(turns>before&&from)LOG.push([from[0],from[1],x,y])};
+    undoMove=()=>{const left=undoLeft;realUndo();if(undoLeft<left)LOG.push(['u'])}}
   window.__flyLines={state:()=>({board:board.map(row=>[...row]),nextColors:[...nextColors],score,lines,turns,wildLife,wildBorn,started,gameOver,locked}),
+    seed:RULE_SEED,log:()=>LOG.map(m=>[...m]),
     start:()=>restart(),move:async(from,to)=>{await handleCell(from[0],from[1]);hoverKey='';showRoute(to[0],to[1]);await wait(650);await handleCell(to[0],to[1])}};
   /* выход у страницы поединка один — своя «НА САЙТ» во фрейме скрыта */
   document.head.insertAdjacentHTML('beforeend','<style>.game-home-menu,.home-menu{display:none!important}</style>');
