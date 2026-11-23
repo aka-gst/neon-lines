@@ -59,7 +59,7 @@ done
 
 echo "== сверка по бою =="
 bad=0; seen=0
-for f in index.html game.js flow.js styles.css sw.js art/ball-core-red.png; do
+for f in index.html game.js flow.js styles.css sw.js art/ball-konfeta-red.png; do
   seen=$((seen + 1))
   a=$(shasum -a 256 "$f" | cut -c1-12)
   b=$(curl -s --retry 3 --retry-all-errors --max-time 40 -o /tmp/vyl.$$ "$SITE/$f?svezho=$(date +%s)" \

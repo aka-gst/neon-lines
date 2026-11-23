@@ -56,20 +56,8 @@ body[data-ball-style] .ball{border-radius:50%;background:var(--ball)}
 .curtain-veil{position:absolute;z-index:0;inset:0;pointer-events:none;background:radial-gradient(58% 40% at 50% 50%,#03000ae6 0 34%,#03000ab3 66%,transparent 88%),linear-gradient(180deg,#03000a66,transparent 26%,transparent 74%,#03000a66)}
 @media(prefers-reduced-motion:reduce){.overlay{animation:none}}
 
-/* Волшебный шар: подходит к любому цвету, поэтому носит их все сразу. Форму и
-   скругление задаёт заново — иначе огранка обрезала бы его своим clip-path, а
-   трубка оставила бы полым. Мигает за два хода до исчезновения: пропасть без
-   предупреждения читалось бы как сбой, а не как правило. */
-body[data-ball-style] .ball.wild{
-  position:relative;border:0;border-radius:50%;clip-path:none;
-  background:conic-gradient(from 0deg,#ef4356,#ffd13a,#42d574,#42aef5,#bd67e8,#ff70ad,#ff9138,#ef4356);
-  box-shadow:0 0 10px #ffffffaa,0 0 20px #bd67e8cc;
-  animation:wild-spin 3.6s linear infinite;
-}
-body[data-ball-style] .ball.wild::after{
-  content:'';position:absolute;inset:30%;border-radius:50%;
-  background:radial-gradient(circle at 38% 33%,#fff,#ffffffd9 45%,#ffffff40 72%,transparent);
-}
+/* Волшебный шар — картинка-конфета (ниже, в блоке картинок). Мигает и крутится за два хода до исчезновения:
+   пропасть без предупреждения читалось бы как сбой, а не как правило. */
 body[data-ball-style] .ball.wild.fading{animation:wild-spin 3.6s linear infinite,wild-blink .9s ease-in-out infinite}
 @keyframes wild-spin{to{transform:rotate(360deg)}}
 @keyframes wild-blink{50%{opacity:.3;box-shadow:0 0 4px #ffffff66}}
@@ -82,39 +70,8 @@ body[data-ball-style] .ball.wild.fading{animation:wild-spin 3.6s linear infinite
    заметит только, что стало теснее, и решит, что ему не везёт. */
 .meter em{display:block;margin-top:4px;color:#767c8b;font-size:8px;font-style:normal;letter-spacing:.1em}
 
-/* Бомба и камень: обе не цвета, поэтому обе сбрасывают чужую форму. Камень
-   единственный на поле ничего не излучает — он и не должен, он помеха. */
-body[data-ball-style] .ball.bomb{
-  position:relative;border:0;border-radius:50%;clip-path:none;
-  background:
-    radial-gradient(circle at 50% 50%,#ff9138 0 6%,transparent 7%),
-    radial-gradient(circle at 30% 26%,#6a5040,#2b1c18 44%,#0b0608 76%);
-  box-shadow:0 0 12px #ff913899,0 0 26px #ef435666,inset -5px -6px 11px #000;
-  animation:bomb-pulse 1.1s ease-in-out infinite;
-}
-/* Трещины: две скрещённые полосы раскалённого света поверх тёмного шара —
-   чтобы он читался как «сейчас рванёт», а не как серый камень. */
-body[data-ball-style] .ball.bomb::before{
-  content:'';position:absolute;inset:14%;border-radius:50%;pointer-events:none;
-  background:
-    linear-gradient(58deg,transparent 44%,#ff9138 47%,#ffd13a 50%,#ff9138 53%,transparent 56%),
-    linear-gradient(-34deg,transparent 46%,#ef4356 49%,#ff9138 51%,transparent 54%);
-  opacity:.85;mix-blend-mode:screen;
-}
-body[data-ball-style] .ball.bomb::after{
-  content:'';position:absolute;left:56%;top:-20%;width:16%;height:30%;
-  border-radius:50% 50% 40% 40%;background:linear-gradient(#fff,#ffd13a 40%,#ff9138);
-  box-shadow:0 0 9px #ffd13a,0 0 18px #ff9138;
-  animation:fuse .42s ease-in-out infinite alternate;
-}
-@keyframes fuse{to{opacity:.4;transform:scale(.72) translateY(8%)}}
-@keyframes bomb-pulse{50%{box-shadow:0 0 18px #ff9138cc,0 0 34px #ef435699,inset -5px -6px 11px #000}}
-
-body[data-ball-style] .ball.stone{
-  border:0;border-radius:22%;clip-path:none;
-  background:linear-gradient(150deg,#4a4d58,#2a2c34 52%,#15161c);
-  box-shadow:inset 2px 2px 0 #5d616e,inset -3px -3px 0 #0d0e12;
-}
+/* Бомба и камень — картинки-конфеты (ниже). Свой фитиль, трещины и обод CSS больше не рисует: на конфете
+   они уже есть, второй слой их задваивал (Рот 23.11). */
 
 /* Указатель пути — и только он. Сергей, 3.10.2026: «когда появляется вариант
    передвинуть шарик, только стрелочка до нового поля появляется, и всё».
@@ -210,39 +167,20 @@ body[data-back-style='ice']{background:repeating-linear-gradient(0deg,#87ffd514 
    закрашенной серединой перестаёт быть полым. Картинки лежат на своём
    домене и в офлайн-копии; не приехавшая честнее выглядит пропуском. */
 body[data-ball-style] .ball{border-radius:50%;background:center/contain no-repeat}
-body[data-ball-style='glass'] .ball[data-colour='red']{background-image:url(art/ball-glass-red.png)}
-body[data-ball-style='glass'] .ball[data-colour='yellow']{background-image:url(art/ball-glass-yellow.png)}
-body[data-ball-style='glass'] .ball[data-colour='green']{background-image:url(art/ball-glass-green.png)}
-body[data-ball-style='glass'] .ball[data-colour='blue']{background-image:url(art/ball-glass-blue.png)}
-body[data-ball-style='glass'] .ball[data-colour='violet']{background-image:url(art/ball-glass-violet.png)}
-body[data-ball-style='glass'] .ball[data-colour='pink']{background-image:url(art/ball-glass-pink.png)}
-body[data-ball-style='glass'] .ball[data-colour='orange']{background-image:url(art/ball-glass-orange.png)}
-body[data-ball-style='core'] .ball[data-colour='red']{background-image:url(art/ball-core-red.png)}
-body[data-ball-style='core'] .ball[data-colour='yellow']{background-image:url(art/ball-core-yellow.png)}
-body[data-ball-style='core'] .ball[data-colour='green']{background-image:url(art/ball-core-green.png)}
-body[data-ball-style='core'] .ball[data-colour='blue']{background-image:url(art/ball-core-blue.png)}
-body[data-ball-style='core'] .ball[data-colour='violet']{background-image:url(art/ball-core-violet.png)}
-body[data-ball-style='core'] .ball[data-colour='pink']{background-image:url(art/ball-core-pink.png)}
-body[data-ball-style='core'] .ball[data-colour='orange']{background-image:url(art/ball-core-orange.png)}
-body[data-ball-style='crystal'] .ball[data-colour='red']{background-image:url(art/ball-crystal-red.png)}
-body[data-ball-style='crystal'] .ball[data-colour='yellow']{background-image:url(art/ball-crystal-yellow.png)}
-body[data-ball-style='crystal'] .ball[data-colour='green']{background-image:url(art/ball-crystal-green.png)}
-body[data-ball-style='crystal'] .ball[data-colour='blue']{background-image:url(art/ball-crystal-blue.png)}
-body[data-ball-style='crystal'] .ball[data-colour='violet']{background-image:url(art/ball-crystal-violet.png)}
-body[data-ball-style='crystal'] .ball[data-colour='pink']{background-image:url(art/ball-crystal-pink.png)}
-body[data-ball-style='crystal'] .ball[data-colour='orange']{background-image:url(art/ball-crystal-orange.png)}
-body[data-ball-style='plasma'] .ball[data-colour='red']{background-image:url(art/ball-plasma-red.png)}
-body[data-ball-style='plasma'] .ball[data-colour='yellow']{background-image:url(art/ball-plasma-yellow.png)}
-body[data-ball-style='plasma'] .ball[data-colour='green']{background-image:url(art/ball-plasma-green.png)}
-body[data-ball-style='plasma'] .ball[data-colour='blue']{background-image:url(art/ball-plasma-blue.png)}
-body[data-ball-style='plasma'] .ball[data-colour='violet']{background-image:url(art/ball-plasma-violet.png)}
-body[data-ball-style='plasma'] .ball[data-colour='pink']{background-image:url(art/ball-plasma-pink.png)}
-body[data-ball-style='plasma'] .ball[data-colour='orange']{background-image:url(art/ball-plasma-orange.png)}
-body[data-ball-style] .ball.wild{background:url(art/ball-wild.png) center/contain no-repeat;border:0;border-radius:50%;clip-path:none;box-shadow:none;position:relative;animation:none}
+/* Конфеты (Сергей 23.11 «Да, ставь»): один набор на все партии. Селектор без названия набора — сохранённая
+   партия со старым «glass/crystal/plasma» в data-ball-style тоже получает конфеты, а не пустые клетки. */
+body[data-ball-style] .ball[data-colour='red']{background-image:url(art/ball-konfeta-red.png?v=1)}
+body[data-ball-style] .ball[data-colour='yellow']{background-image:url(art/ball-konfeta-yellow.png?v=1)}
+body[data-ball-style] .ball[data-colour='green']{background-image:url(art/ball-konfeta-green.png?v=1)}
+body[data-ball-style] .ball[data-colour='blue']{background-image:url(art/ball-konfeta-blue.png?v=1)}
+body[data-ball-style] .ball[data-colour='violet']{background-image:url(art/ball-konfeta-violet.png?v=1)}
+body[data-ball-style] .ball[data-colour='pink']{background-image:url(art/ball-konfeta-pink.png?v=1)}
+body[data-ball-style] .ball[data-colour='orange']{background-image:url(art/ball-konfeta-orange.png?v=1)}
+body[data-ball-style] .ball.wild{background:url(art/ball-konfeta-wild.png?v=1) center/contain no-repeat;border:0;border-radius:50%;clip-path:none;box-shadow:none;position:relative;animation:none}
 body[data-ball-style] .ball.wild::before,body[data-ball-style] .ball.wild::after{content:none}
-body[data-ball-style] .ball.bomb{background:url(art/ball-bomb.png) center/contain no-repeat;border:0;border-radius:50%;clip-path:none;box-shadow:none;position:relative;animation:none}
+body[data-ball-style] .ball.bomb{background:url(art/ball-konfeta-bomb.png?v=1) center/contain no-repeat;border:0;border-radius:50%;clip-path:none;box-shadow:none;position:relative;animation:none}
 body[data-ball-style] .ball.bomb::before,body[data-ball-style] .ball.bomb::after{content:none}
-body[data-ball-style] .ball.stone{background:url(art/ball-stone.png) center/contain no-repeat;border:0;border-radius:50%;clip-path:none;box-shadow:none;position:relative;animation:none}
+body[data-ball-style] .ball.stone{background:url(art/ball-konfeta-stone.png?v=1) center/contain no-repeat;border:0;border-radius:50%;clip-path:none;box-shadow:none;position:relative;animation:none}
 body[data-ball-style] .ball.stone::before,body[data-ball-style] .ball.stone::after{content:none}
 /* Блик.
 
@@ -299,13 +237,8 @@ body[data-ball-style] .ball.route-ball{position:absolute}
 @keyframes trail-in{from{opacity:0;transform:scale(.6)}}
 @media(prefers-reduced-motion:reduce){.cell.trail::before{animation:none}}
 
-/* Красный и розовый больше не отличаются одной температурой цвета: красный
-   шестигранный и с лучом, розовый — округлый четырёхлепестковый с кольцом.
-   Силуэт остаётся различимым и в сером, и на клетке около сорока пикселей. */
-body[data-ball-style] .ball[data-colour='red']{border-radius:0;clip-path:polygon(50% 1%,91% 25%,91% 75%,50% 99%,9% 75%,9% 25%)}
-body[data-ball-style] .ball[data-colour='red']::after{content:'';position:absolute;inset:17%;background:linear-gradient(90deg,transparent 43%,#fff9 47% 53%,transparent 57%);mix-blend-mode:screen;pointer-events:none}
-body[data-ball-style] .ball[data-colour='pink']{border-radius:34% 66% 34% 66%/66% 34% 66% 34%}
-body[data-ball-style] .ball[data-colour='pink']::after{content:'';position:absolute;inset:21%;border:2px solid #fff9;border-radius:50%;box-shadow:0 0 5px #ffb5d8;pointer-events:none}
+/* Красный и розовый у конфет различаются силуэтом самой картинки (леденец-спираль и пончик), поэтому
+   прежняя огранка красного и кольцо розового (для шаров одного силуэта) сняты: резали и задваивали конфету. */
 
 /* Обычная линия рассыпается на куски её же шаров. Бомба получает отдельную
    оранжевую ударную волну в точке посадки — её нельзя принять за сбор линии. */

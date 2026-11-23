@@ -106,7 +106,7 @@ function warmLooks(){
   if(warmed)return;
   warmed=true;
   const files=[];
-  for(const[style]of BALL_STYLES)for(const colour of COLOR_NAMES)files.push(`art/ball-${style}-${colour}.png`);
+  for(const[style]of BALL_STYLES)for(const colour of COLOR_NAMES)files.push(`art/ball-${style}-${colour}.png?v=1`);
   files.push('art/burst-j.png','art/burst-k.png');
   let index=0;
   const next=()=>{
@@ -132,7 +132,7 @@ function warmLooks(){
    фона), выброс новых шаров и подсказки выключаются на время сцены, размер
    доски задаётся явно — в скрытой вкладке спросить его не у кого. */
 let showcasing=false;
-const SHOWCASE_LOOK={ballStyle:'plasma',boardStyle:'grid',backStyle:'void'};
+const SHOWCASE_LOOK={ballStyle:'konfeta',boardStyle:'grid',backStyle:'void'};
 const SHOWCASE_BURST='art/burst-j.png';
 
 function scene(options={}){
@@ -238,9 +238,8 @@ function startTour(force){if(!window.Tour)return;if(force)window.Tour.start(TOUR
    выбирается в панели по ?admin: снял галочку — этот вариант больше не придёт.
    Пустой список значит «всё разрешено», иначе один снятый крестик оставил бы
    игру без внешности вообще. */
-// Production pool is intentionally curated: the older 'core' spheres remain in art/
-// for reference, but the richer glass/crystal/plasma sets define the shipped look.
-const BALL_STYLES=[['glass','СТЕКЛО'],['crystal','КРИСТАЛЛ'],['plasma','ПЛАЗМА']];
+// Шары — конфеты, один набор (Сергей 23.11 «Да, ставь»); прежние стекло/кристалл/плазма удалены вместе с файлами.
+const BALL_STYLES=[['konfeta','КОНФЕТЫ']];
 const COLOR_NAMES=['red','yellow','green','blue','violet','pink','orange'];
 const BOARD_STYLES=[['grid','СЕТКА'],['void','ПУСТОТА'],['scan','РАЗВЁРТКА'],['tile','ПЛИТКА']];
 const BACK_STYLES=[['void','ЧЁРНЫЙ'],['violet','ФИОЛЕТ'],['ember','УГЛИ'],['ice','ЛЁД']];

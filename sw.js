@@ -3,7 +3,7 @@
 // Raise this name when an asset is dropped from the shell: refreshed files
 // replace themselves, but entries for files that no longer ship only go away
 // when the old cache is discarded on activate.
-const CACHE = 'neon-lines-v31';
+const CACHE = 'neon-lines-v32';
 // Both games are served from this one origin and therefore share a single
 // CacheStorage. The cleanup on activate must only ever touch this game's own
 // caches: deleting everything else wipes the other game's offline copy.
@@ -25,20 +25,18 @@ const SHELL = [
   './og.jpg',
   './icon-maskable-512.png',
   './burst.png',
-  /* Один набор шаров и особые фишки лежат в офлайн-копии; остальные два
-     набора и широкие фоны подтягиваются при первой встрече и оседают в
-     кэше сами — класть в оболочку восемь мегабайт ради выбора, который
-     сделает жребий, незачем. */
-  './art/ball-glass-red.png',
-  './art/ball-glass-yellow.png',
-  './art/ball-glass-green.png',
-  './art/ball-glass-blue.png',
-  './art/ball-glass-violet.png',
-  './art/ball-glass-pink.png',
-  './art/ball-glass-orange.png',
-  './art/ball-wild.png',
-  './art/ball-bomb.png',
-  './art/ball-stone.png',
+  /* Конфеты (единственный набор) и особые фишки лежат в офлайн-копии; широкие
+     фоны подтягиваются при первой встрече и оседают в кэше сами. */
+  './art/ball-konfeta-red.png',
+  './art/ball-konfeta-yellow.png',
+  './art/ball-konfeta-green.png',
+  './art/ball-konfeta-blue.png',
+  './art/ball-konfeta-violet.png',
+  './art/ball-konfeta-pink.png',
+  './art/ball-konfeta-orange.png',
+  './art/ball-konfeta-wild.png',
+  './art/ball-konfeta-bomb.png',
+  './art/ball-konfeta-stone.png',
   './art/burst-j.png',
   './art/burst-k.png',
 ];
