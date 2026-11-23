@@ -47,7 +47,7 @@ const STAGE_AT=[0,10,22];
 let lines=0;
 const stage=()=>STAGE_AT.filter(threshold=>lines>=threshold).length;
 const ballsPerTurn=()=>2+stage();
-const ballWord=count=>count<5?'шара':'шаров';
+const ballWord=count=>count<5?'конфеты':'конфет';
 const wildAt=()=>{for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++)if(isWild(board[y][x]))return[x,y];return null};
 const wildLeft=()=>wildLife?wildLife-(turns-wildBorn):0;
 // Мигать начинает за два хода до конца: неожиданное исчезновение читалось бы
@@ -90,8 +90,8 @@ function rollNext(){
 // играми. Появляется один раз на устройство и по кнопке «как играть». Игра
 // пошаговая, торопить некому, поэтому замораживать ничего не нужно.
 const TOUR_STEPS=[
-  {sel:'#board',text:'Поле 9×9. Нажми на шар, потом на свободную клетку — он поедет туда, если есть дорога.'},
-  {sel:'#next',text:'Три следующих шара. Они лягут на поле после твоего хода.'},
+  {sel:'#board',text:'Поле 9×9. Нажми на конфету, потом на свободную клетку — она поедет туда, если есть дорога.'},
+  {sel:'#next',text:'Три следующие конфеты. Они лягут на поле после твоего хода.'},
   {sel:'.sidebar-top .meter',text:'Пять одинаковых в ряд — по горизонтали, вертикали или диагонали — сгорают и дают очки.'}
 ];
 /* Панель видов. Открывается только по ?admin: игроку она не нужна, а хозяину
@@ -243,7 +243,7 @@ const BALL_STYLES=[['konfeta','КОНФЕТЫ']];
 const COLOR_NAMES=['red','yellow','green','blue','violet','pink','orange'];
 const BOARD_STYLES=[['grid','СЕТКА'],['void','ПУСТОТА'],['scan','РАЗВЁРТКА'],['tile','ПЛИТКА']];
 const BACK_STYLES=[['void','ЧЁРНЫЙ'],['violet','ФИОЛЕТ'],['ember','УГЛИ'],['ice','ЛЁД']];
-const LOOKS=[['balls',BALL_STYLES,'ballStyle','ШАРЫ'],['board',BOARD_STYLES,'boardStyle','ПОЛЕ'],['back',BACK_STYLES,'backStyle','ФОН']];
+const LOOKS=[['balls',BALL_STYLES,'ballStyle','КОНФЕТЫ'],['board',BOARD_STYLES,'boardStyle','ПОЛЕ'],['back',BACK_STYLES,'backStyle','ФОН']];
 const POOL_KEY='neon-lines-pool:';
 function poolOf(key,list){
   let saved=[];
@@ -445,7 +445,7 @@ function matches(){const result=new Set();
   }
   return result}
 function freeCells(){const out=[];board.forEach((row,y)=>row.forEach((value,x)=>{if(value===null)out.push([x,y])}));return out}
-function render(){boardEl.innerHTML='';for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++){const button=document.createElement('button');button.className=`cell ${selected?.[0]===x&&selected?.[1]===y?'selected':''} ${born.has(id(x,y))?'born':''} ${clearing.has(id(x,y))?'clearing':''}`;button.setAttribute('aria-label',board[y][x]===null?'Свободная клетка':'Шарик');button.onclick=()=>handleCell(x,y);if(board[y][x]!==null)button.innerHTML=ballTag(board[y][x]);boardEl.append(button)}scoreEl.textContent=String(score);bestEl.textContent=String(best);stageEl.textContent=`этап ${stage()}`;undoEl.textContent=`↶ ОТКАТ ${undoLeft} · −${UNDO_COST}`;undoEl.disabled=!snapshot||undoLeft<=0||locked||gameOver||!started;nextEl.innerHTML=nextColors.map(color=>ballTag(color)).join('');recordsEl.innerHTML=scoreRows(allScores);if(!started)overlay('start','НЕОН ЛИНИИ','Выстраивай пять шаров в линию','НАЧАТЬ',restart);else if(gameOver)overlay('over','ИГРА ОКОНЧЕНА',`Счёт: ${score}`,'ЕЩЁ РАЗ',restart);else document.querySelector('.overlay')?.remove()}
+function render(){boardEl.innerHTML='';for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++){const button=document.createElement('button');button.className=`cell ${selected?.[0]===x&&selected?.[1]===y?'selected':''} ${born.has(id(x,y))?'born':''} ${clearing.has(id(x,y))?'clearing':''}`;button.setAttribute('aria-label',board[y][x]===null?'Свободная клетка':'Конфета');button.onclick=()=>handleCell(x,y);if(board[y][x]!==null)button.innerHTML=ballTag(board[y][x]);boardEl.append(button)}scoreEl.textContent=String(score);bestEl.textContent=String(best);stageEl.textContent=`этап ${stage()}`;undoEl.textContent=`↶ ОТКАТ ${undoLeft} · −${UNDO_COST}`;undoEl.disabled=!snapshot||undoLeft<=0||locked||gameOver||!started;nextEl.innerHTML=nextColors.map(color=>ballTag(color)).join('');recordsEl.innerHTML=scoreRows(allScores);if(!started)overlay('start','НЕОН ЛИНИИ','Выстраивай пять конфет в линию','НАЧАТЬ',restart);else if(gameOver)overlay('over','ИГРА ОКОНЧЕНА',`Счёт: ${score}`,'ЕЩЁ РАЗ',restart);else document.querySelector('.overlay')?.remove()}
 // The curtain lives on the body, not inside the board: it covers the whole
 // screen now and carries its own picture. Rebuilt only when the state behind
 // it changes, so the fade does not replay on every render.
@@ -526,12 +526,12 @@ async function removeMatches(found){if(!found.size)return false;sound.clear();st
      ровно столько же, сколько стоила, — старые рекорды остаются сравнимы. */
   /* Волшебный шар, сгоревший в цепочке, доплачивает: иначе он просто затычка
      под нехватку цвета, а не находка. */
-  const gained=50+(found.size-5)*40+(usedWild?100:0);score+=gained;scorePop(found,found.size>=7?`ДЛИННАЯ ЛИНИЯ · +${gained}`:`+${gained}`);clearing=new Set();render();messageEl.textContent=(usedWild?`Волшебный шар подошёл! +${gained}, из них 100 за него`:`Линия! +${gained}`)+(brokeStones?` Камней осыпалось: ${brokeStones}.`:'');if(nowStage>wasStage){while(nextColors.length<ballsPerTurn())nextColors.push(randomColor());sound.stage();quake(2);render();messageEl.textContent=`ЭТАП ${nowStage}. Теперь по ${ballsPerTurn()} ${ballWord(ballsPerTurn())} за ход.`}saveGame();return true}
+  const gained=50+(found.size-5)*40+(usedWild?100:0);score+=gained;scorePop(found,found.size>=7?`ДЛИННАЯ ЛИНИЯ · +${gained}`:`+${gained}`);clearing=new Set();render();messageEl.textContent=(usedWild?`Волшебная конфета подошла! +${gained}, из них 100 за неё`:`Линия! +${gained}`)+(brokeStones?` Камней осыпалось: ${brokeStones}.`:'');if(nowStage>wasStage){while(nextColors.length<ballsPerTurn())nextColors.push(randomColor());sound.stage();quake(2);render();messageEl.textContent=`ЭТАП ${nowStage}. Теперь по ${ballsPerTurn()} ${ballWord(ballsPerTurn())} за ход.`}saveGame();return true}
 /* Особые фишки появляются редко, и строка сообщений под полем для них слишком
    тихая: игрок видит новый предмет и не понимает, что это. Поэтому объяснение
    выезжает прямо к нему — с самой фишкой, нарисованной рядом, каждый раз. */
 const TIPS={
-  [WILD]:['ВОЛШЕБНЫЙ ШАР','Подходит к любому цвету. Живёт несколько ходов и тает — последние два мигает.'],
+  [WILD]:['ВОЛШЕБНАЯ КОНФЕТА','Подходит к любому цвету. Живёт несколько ходов и тает — последние два мигает.'],
   [BOMB]:['БОМБА','Веди её куда хочешь: на месте она сносит всё вокруг себя. Единственное, что убирает камень без линии.'],
   [STONE]:['КАМЕНЬ','Не двигается и рвёт ряд. Осыплется, если рядом сгорит линия. Или взорви его бомбой.']
 };
@@ -646,10 +646,10 @@ async function handleCell(x,y){
     const target=boardEl.children[y*SIZE+x];
     if(target?.classList.contains('ghost'))return;
     sound.select();selected=[x,y];clearRoute();
-    messageEl.textContent=clearing.has(id(x,y))?'Этот шар сейчас сгорает.':'Шарик выбран.';
+    messageEl.textContent=clearing.has(id(x,y))?'Эта конфета сейчас сгорает.':'Конфета выбрана.';
     render();return}
   if(locked)return;
-  if(!selected){messageEl.textContent='Сначала выбери шарик.';return}
+  if(!selected){messageEl.textContent='Сначала выбери конфету.';return}
   const path=findPath(selected,[x,y]);
   if(!path){messageEl.textContent='Туда нет свободного пути.';return}
   const firstMove=turns===0;
@@ -657,7 +657,7 @@ async function handleCell(x,y){
   takeSnapshot();
   const from=selected,color=board[from[1]][from[0]];
   selected=null;
-  messageEl.textContent='Шарик прыгает по найденному пути…';
+  messageEl.textContent='Конфета прыгает по найденному пути…';
   await animatePath(from,path,color);
   board[from[1]][from[0]]=null;board[y][x]=color;render();
   /* Бомба срабатывает там, где встала: ход ею — это и есть её применение. */
@@ -667,19 +667,19 @@ async function handleCell(x,y){
   telemetry.once('first-move');
   if(matched)telemetry.once('first-line');
   if(!cleared){const wildCame=await spawnBalls();
-    messageEl.textContent=wildCame?'Особая фишка в очереди. Смотри, что придёт.':'Появились три новых шарика.'}
+    messageEl.textContent=wildCame?'Особая фишка в очереди. Смотри, что придёт.':'Появились три новые конфеты.'}
   turns+=1;
   const hint=flow.firstTurnHint({firstMove,cleared});
   if(hint)messageEl.textContent=hint;
   const wild=wildAt();
-  if(wild&&wildLeft()<=0){board[wild[1]][wild[0]]=null;wildLife=0;messageEl.textContent='Волшебный шар растаял.';sound.step(3)}
+  if(wild&&wildLeft()<=0){board[wild[1]][wild[0]]=null;wildLife=0;messageEl.textContent='Волшебная конфета растаяла.';sound.step(3)}
   else if(!wild)wildLife=0;
   if(!showcasing&&turns>=nextWisdomAt){messageEl.textContent=WISDOM[Math.floor(Math.random()*WISDOM.length)];nextWisdomAt=turns+8+Math.floor(Math.random()*6)}
   if(freeCells().length===0){gameOver=true;finishScore()}
   locked=false;render();saveGame()}
 
 function finishScore(){dropSave();sound.over();setTimeout(musicSync,900);quake(3);telemetry.track('game-finish',{game:'neon-lines',score,duration_seconds:Math.round((Date.now()-startedAt)/1000)});void submitLeaderboard();records=[...records,score].sort((a,b)=>b-a).slice(0,5);best=Math.max(best,score);localStorage.setItem('neon-lines-records',JSON.stringify(records));localStorage.setItem('neon-lines-best',String(best))}
-function restart(){dropSave();dryTurns=0;specialsSeen=0;sound.start();rollBalls();startedAt=Date.now();void beginLeaderboard();telemetry.track('game-start',{game:'neon-lines'});board=freshBoard();selected=null;snapshot=null;undoLeft=UNDO_TOTAL;wildLife=0;wildBorn=0;score=0;turns=0;lines=0;nextColors=rollNext();nextWisdomAt=8+Math.floor(Math.random()*5);started=true;gameOver=false;locked=false;born=new Set();board.forEach((row,y)=>row.forEach((value,x)=>{if(value!==null)born.add(id(x,y))}));messageEl.textContent='Собери пять одинаковых шаров.';render();warmLooks();setTimeout(()=>{born=new Set();render()},520);setTimeout(()=>startTour(false),900);musicSync()}
+function restart(){dropSave();dryTurns=0;specialsSeen=0;sound.start();rollBalls();startedAt=Date.now();void beginLeaderboard();telemetry.track('game-start',{game:'neon-lines'});board=freshBoard();selected=null;snapshot=null;undoLeft=UNDO_TOTAL;wildLife=0;wildBorn=0;score=0;turns=0;lines=0;nextColors=rollNext();nextWisdomAt=8+Math.floor(Math.random()*5);started=true;gameOver=false;locked=false;born=new Set();board.forEach((row,y)=>row.forEach((value,x)=>{if(value!==null)born.add(id(x,y))}));messageEl.textContent='Собери пять одинаковых конфет.';render();warmLooks();setTimeout(()=>{born=new Set();render()},520);setTimeout(()=>startTour(false),900);musicSync()}
 document.querySelector('#restart').onclick=()=>{if(started&&!gameOver&&!confirm('Начать новую игру? Текущий результат будет потерян.'))return;restart()};
 /* Выход на главную обрывает партию так же начисто, как «новая игра», только
    молча и без кнопки подтверждения. Спрашиваем, если партия идёт. */

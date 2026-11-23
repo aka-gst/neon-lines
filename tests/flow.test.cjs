@@ -37,7 +37,7 @@ test('the first empty move explains the three incoming balls', () => {
   assert.ok(flow, 'flow.js must expose the first-turn helper');
   assert.equal(
     flow.firstTurnHint({ firstMove: true, cleared: false }),
-    'Пришли три шара. Собери первую пятёрку — +50'
+    'Пришли три конфеты. Собери первую пятёрку — +50'
   );
 });
 

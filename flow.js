@@ -3,7 +3,7 @@
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   if(root)root.LinesFlow=api;
 })(typeof window!=='undefined'?window:globalThis,function(){
-  const FIRST_TURN_HINT='Пришли три шара. Собери первую пятёрку — +50';
+  const FIRST_TURN_HINT='Пришли три конфеты. Собери первую пятёрку — +50';
 
   function firstTurnHint({firstMove,cleared}){
     return firstMove&&!cleared?FIRST_TURN_HINT:null;

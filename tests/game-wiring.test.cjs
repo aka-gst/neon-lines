@@ -10,8 +10,8 @@ const styles = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
 const worker = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 
 test('the game loads the flow helper before game.js', () => {
-  const helper = page.indexOf('src="flow.js?v=2"');
-  const gameScript = page.indexOf('src="game.js?v=39"');
+  const helper = page.indexOf('src="flow.js?v=3"');
+  const gameScript = page.indexOf('src="game.js?v=40"');
   assert.ok(helper >= 0, 'index must load flow.js');
   assert.ok(helper < gameScript, 'flow.js must load before game.js');
 });
@@ -24,8 +24,8 @@ test('test-mode pages do not load the production Pulse script', () => {
 
 test('a visual build changes both its asset URLs and offline cache name', () => {
   assert.match(page, /styles\.css\?v=30/);
-  assert.match(page, /game\.js\?v=39/);
-  assert.match(worker, /neon-lines-v32/);
+  assert.match(page, /game\.js\?v=40/);
+  assert.match(worker, /neon-lines-v33/);
 });
 
 test('the exit is discoverable and names the cost of leaving an active game', () => {
@@ -60,9 +60,12 @@ test('selecting a ball marks only the ball; the route is the only pointer, shown
   assert.doesNotMatch(styles, /@media\(hover:hover\)\{\.cell\.route/);
 });
 
-test('red and pink have non-colour marks, while sound and music share one toggle treatment', () => {
-  assert.match(styles, /\.ball\[data-colour='red'\]::after/);
-  assert.match(styles, /\.ball\[data-colour='pink'\]::after/);
+test('red and pink differ by candy silhouette (own files, nothing clips them), while sound and music share one toggle treatment', () => {
+  // Конфеты 23.11: красный — леденец, розовый — пончик; различие в силуэте картинки, не в CSS-огранке поверх.
+  assert.match(styles, /\.ball\[data-colour='red'\]\{background-image:url\(art\/ball-konfeta-red\.png/);
+  assert.match(styles, /\.ball\[data-colour='pink'\]\{background-image:url\(art\/ball-konfeta-pink\.png/);
+  assert.doesNotMatch(styles, /\.ball\[data-colour='(red|pink)'\][^{]*\{[^}]*clip-path/);
+  assert.notDeepStrictEqual(fs.readFileSync(path.join(root,'art/ball-konfeta-red.png')), fs.readFileSync(path.join(root,'art/ball-konfeta-pink.png')));
   assert.match(styles, /#sound-toggle,#music-toggle/);
   assert.match(styles, /#undo\{order:-1/);
   assert.match(styles, /#restart,#sound-toggle,#music-toggle,#how\{min-height:44px/);
@@ -85,4 +88,15 @@ test('short landscape keeps every 44px control in a compact two-column panel', (
   assert.match(styles, /body \.sidebar-bottom\{grid-template-columns:1fr 1fr/);
   assert.match(styles, /body \.sidebar-bottom \.records\{display:none/);
   assert.match(styles, /body \.board\{height:min\(calc\(100dvh - 62px\)/);
+});
+
+test('после конфет в строках для игрока нет «шар» (комментарии не в счёт)', () => {
+  // Строковые литералы и текст разметки: '…', "…", `…`, >…<. Имена классов и файлов «шар» не содержат.
+  const flow = fs.readFileSync(path.join(root, 'flow.js'), 'utf8');
+  const manifest = fs.readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8');
+  const bezKommentariev = s => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/<!--[\s\S]*?-->/g, '');
+  const stroki = s => bezKommentariev(s).match(/(['"`>])[^'"`<\n]*?[Шш][Аа][Рр][^'"`<\n]*?['"`<]/g) || [];
+  for (const [name, text] of [['game.js', game], ['flow.js', flow], ['index.html', page], ['manifest', manifest]]) {
+    assert.deepEqual(stroki(text), [], name);
+  }
 });
