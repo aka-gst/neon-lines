@@ -200,12 +200,24 @@ body[data-ball-style] .ball.stone::before,body[data-ball-style] .ball.stone::aft
 body[data-ball-style] .ball[data-colour]:not(.route-ball){
   position:relative;overflow:hidden;
   filter:drop-shadow(0 2px 3px rgba(0,0,0,.62))}
+/* 27.11 «на некоторых шариках полоска вертикальная»: полоса блика резалась по кругу
+   (border-radius у .ball), а конфеты не круглые — у фантика, звезды, мишки, сердца и
+   фасолины полоса шла по пустому фону вокруг. Теперь блик стоит на месте и маскируется
+   той же картинкой конфеты (--konfeta), а бежит фон внутри него: свет только по сахару. */
 body[data-ball-style] .ball[data-colour]:not(.route-ball)::before{
-  content:'';position:absolute;inset:-40%;pointer-events:none;
-  background:linear-gradient(72deg,transparent 41%,rgba(255,255,255,.62) 47.5%,rgba(255,255,255,.1) 51.5%,transparent 57%);
-  transform:translateX(-130%);
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(72deg,transparent 41%,rgba(255,255,255,.62) 47.5%,rgba(255,255,255,.1) 51.5%,transparent 57%) no-repeat;
+  background-size:280% 280%;background-position:100% 50%;
+  -webkit-mask:var(--konfeta) center/contain no-repeat;mask:var(--konfeta) center/contain no-repeat;
   animation:glint 9s linear infinite}
-@keyframes glint{0%,90%{transform:translateX(-130%)}97%,100%{transform:translateX(130%)}}
+@keyframes glint{0%,90%{background-position:100% 50%}97%,100%{background-position:-5% 50%}}
+body[data-ball-style] .ball[data-colour='red']{--konfeta:url(art/ball-konfeta-red.png?v=1)}
+body[data-ball-style] .ball[data-colour='yellow']{--konfeta:url(art/ball-konfeta-yellow.png?v=1)}
+body[data-ball-style] .ball[data-colour='green']{--konfeta:url(art/ball-konfeta-green.png?v=1)}
+body[data-ball-style] .ball[data-colour='blue']{--konfeta:url(art/ball-konfeta-blue.png?v=1)}
+body[data-ball-style] .ball[data-colour='violet']{--konfeta:url(art/ball-konfeta-violet.png?v=1)}
+body[data-ball-style] .ball[data-colour='pink']{--konfeta:url(art/ball-konfeta-pink.png?v=1)}
+body[data-ball-style] .ball[data-colour='orange']{--konfeta:url(art/ball-konfeta-orange.png?v=1)}
 body[data-ball-style] .cell:nth-child(7n+1) .ball[data-colour]:not(.route-ball)::before{animation-delay:-.4s}
 body[data-ball-style] .cell:nth-child(7n+2) .ball[data-colour]:not(.route-ball)::before{animation-delay:-1.7s}
 body[data-ball-style] .cell:nth-child(7n+3) .ball[data-colour]:not(.route-ball)::before{animation-delay:-3.1s}

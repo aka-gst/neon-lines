@@ -11,7 +11,7 @@ const worker = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 
 test('the game loads the flow helper before game.js', () => {
   const helper = page.indexOf('src="flow.js?v=3"');
-  const gameScript = page.indexOf('src="game.js?v=40"');
+  const gameScript = page.indexOf('src="game.js?v=41"');
   assert.ok(helper >= 0, 'index must load flow.js');
   assert.ok(helper < gameScript, 'flow.js must load before game.js');
 });
@@ -23,9 +23,9 @@ test('test-mode pages do not load the production Pulse script', () => {
 });
 
 test('a visual build changes both its asset URLs and offline cache name', () => {
-  assert.match(page, /styles\.css\?v=30/);
-  assert.match(page, /game\.js\?v=40/);
-  assert.match(worker, /neon-lines-v33/);
+  assert.match(page, /styles\.css\?v=31/);
+  assert.match(page, /game\.js\?v=41/);
+  assert.match(worker, /neon-lines-v35/);
 });
 
 test('the exit is discoverable and names the cost of leaving an active game', () => {
@@ -99,4 +99,13 @@ test('после конфет в строках для игрока нет «ш�
   for (const [name, text] of [['game.js', game], ['flow.js', flow], ['index.html', page], ['manifest', manifest]]) {
     assert.deepEqual(stroki(text), [], name);
   }
+});
+
+test('candy glint is masked by the candy picture, not a circle (27.11 vertical stripe)', () => {
+  const rule = styles.match(/\.ball\[data-colour\]:not\(\.route-ball\)::before\{[^}]*\}/);
+  assert.ok(rule, 'glint rule exists');
+  assert.match(rule[0], /mask:var\(--konfeta\)/);
+  assert.doesNotMatch(rule[0], /inset:-40%/);
+  for (const c of ['red', 'yellow', 'green', 'blue', 'violet', 'pink', 'orange'])
+    assert.match(styles, new RegExp(`\\[data-colour='${c}'\\]\\{--konfeta:url\\(art/ball-konfeta-${c}\\.png`));
 });

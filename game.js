@@ -297,8 +297,11 @@ function ensureAudio(){
   if(!audio){
     audio=new AudioEngine();
     busMaster=audio.createGain();busMaster.gain.value=.9;busMaster.connect(audio.destination);
-    busEffects=audio.createGain();busEffects.gain.value=1;busEffects.connect(busMaster);
-    busMusic=audio.createGain();busMusic.gain.value=.3;busMusic.connect(busMaster);
+    /* 27.11 «вставить музыку и звуки»: всё звучало, но на выходе музыка −54 дБFS RMS, кнопка −33 дБFS
+       пиком — на обычной громкости не слышно. Эффекты ×6 (+15,6 дБ; худшее наложение «линия» ≤0,57),
+       музыка ×10 (+20 дБ; пик ≤0,19) — слышна, но под эффектами. Тишина по-прежнему ровно 0. */
+    busEffects=audio.createGain();busEffects.gain.value=6;busEffects.connect(busMaster);
+    busMusic=audio.createGain();busMusic.gain.value=3;busMusic.connect(busMaster);
   }
   if(audio.state==='suspended')void audio.resume();
   return audio;
