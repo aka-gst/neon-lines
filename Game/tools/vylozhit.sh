@@ -16,7 +16,7 @@
 # Имена переменных латиницей намеренно: POSIX-оболочка не принимает кириллицу
 # в имени и падает на первом же присваивании.
 #
-#   sh tools/vylozhit.sh
+#   sh Game/tools/vylozhit.sh
 set -eu
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$HERE"
